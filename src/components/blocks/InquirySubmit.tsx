@@ -24,6 +24,7 @@ export function InquirySubmit({ blockId, title, buttonText, options, primaryColo
     }
 
     setStatus('loading');
+    setMessage('');
     try {
       const res = await fetch('/api/inquiry', {
         method: 'POST',
@@ -78,12 +79,12 @@ export function InquirySubmit({ blockId, title, buttonText, options, primaryColo
         <button
           type="submit"
           disabled={status === 'loading'}
-          className="w-full h-11 rounded-xl text-white font-bold disabled:opacity-50"
+          className="w-full h-11 rounded-xl text-white font-bold disabled:opacity-50 transition"
           style={{ backgroundColor: primaryColor }}
         >
-          {status === 'loading' ? '...' : buttonText || '보내기'}
+          {status === 'loading' ? '...' : (buttonText || '보내기')}
         </button>
-        {message && status !== 'success' && (
+        {message && status === 'error' && (
           <p className="text-xs text-red-500 mt-2 text-center">{message}</p>
         )}
       </form>

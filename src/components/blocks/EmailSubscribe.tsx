@@ -21,6 +21,7 @@ export function EmailSubscribe({ blockId, title, description, buttonText, primar
     if (!email) return;
 
     setStatus('loading');
+    setMessage('');
     try {
       const res = await fetch('/api/email', {
         method: 'POST',
@@ -49,7 +50,7 @@ export function EmailSubscribe({ blockId, title, description, buttonText, primar
         <Mail className="w-4 h-4" style={{ color: primaryColor }} /> {title || '구독하기'}
       </h3>
       {description && <p className="text-sm text-text-2 mb-3">{description}</p>}
-      
+
       {status === 'success' ? (
         <div className="bg-white border border-green-300 rounded-xl p-3 text-sm text-green-700 text-center">
           {message}
@@ -63,19 +64,19 @@ export function EmailSubscribe({ blockId, title, description, buttonText, primar
             onChange={(e) => setEmail(e.target.value)}
             disabled={status === 'loading'}
             required
-            className="flex-1 h-11 px-4 rounded-xl border border-border bg-white"
+            className="flex-1 h-11 px-4 rounded-xl border border-border bg-white text-text"
           />
           <button
             type="submit"
-            disabled={status === 'loading'}
-            className="h-11 px-5 rounded-xl text-white font-bold disabled:opacity-50"
+            disabled={status === 'loading' || !email}
+            className="h-11 px-5 rounded-xl text-white font-bold disabled:opacity-50 transition"
             style={{ backgroundColor: primaryColor }}
           >
-            {status === 'loading' ? '...' : buttonText || '구독'}
+            {status === 'loading' ? '...' : (buttonText || '구독')}
           </button>
         </form>
       )}
-      
+
       {status === 'error' && (
         <p className="text-xs text-red-500 mt-2">{message}</p>
       )}

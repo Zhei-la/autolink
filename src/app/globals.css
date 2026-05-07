@@ -14,9 +14,22 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 모바일 사파리에서 input zoom 방지 */
+/* 紐⑤컮???ы뙆由ъ뿉??input zoom 諛⑹? */
 @media (max-width: 768px) {
   input, select, textarea {
     font-size: 16px !important;
+  }
+}
+
+
+/* 블록 추가 모달 - 카드 크기 강제 */
+.block-add-grid > button {
+  height: 80px !important;
+  aspect-ratio: auto !important;
+}
+
+@media (min-width: 640px) {
+  .block-add-grid > button {
+    height: 90px !important;
   }
 }

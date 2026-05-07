@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
-import { BlockPreview } from '@/components/blocks/BlockPreview';
+import { PublicPageClient } from '@/components/blocks/PublicPageClient';
 import type { Block } from '@/types';
 import type { Metadata } from 'next';
 
@@ -56,16 +56,10 @@ export default async function PublicPage({ params }: { params: { slug: string } 
   return (
     <main className="min-h-screen" style={{ backgroundColor: bgColor }}>
       <div className="mx-auto max-w-md px-4 py-8">
-        <div className="space-y-3">
-          {(blocks || []).map((block) => (
-            <BlockPreview
-              key={block.id}
-              block={block as Block}
-              primaryColor={primaryColor}
-              isPublic={true}
-            />
-          ))}
-        </div>
+        <PublicPageClient
+          blocks={(blocks || []) as Block[]}
+          primaryColor={primaryColor}
+        />
 
         {/* 푸터 */}
         <div className="text-center mt-12 pt-6 border-t border-text-3/20">

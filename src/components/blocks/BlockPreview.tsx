@@ -1,10 +1,12 @@
 import { formatPrice } from '@/lib/utils';
+import { EmailSubscribe } from './EmailSubscribe';
+import { InquirySubmit } from './InquirySubmit';
 import { Mail, Calendar, MessageSquare, Instagram, Youtube, Twitter, MessageCircle } from 'lucide-react';
 import type { Block } from '@/types';
 
 /**
- * 블록 미리보기. 편집기와 공개 페이지에서 공통 사용.
- * primaryColor를 prop으로 받아 테마 적용.
+ * 釉붾줉 誘몃━蹂닿린. ?몄쭛湲곗? 怨듦컻 ?섏씠吏?먯꽌 怨듯넻 ?ъ슜.
+ * primaryColor瑜?prop?쇰줈 諛쏆븘 ?뚮쭏 ?곸슜.
  */
 export function BlockPreview({
   block,
@@ -37,7 +39,7 @@ export function BlockPreview({
   }
 }
 
-// ===== 1. 프로필 =====
+// ===== 1. ?꾨줈??=====
 function ProfileBlock({ data, primaryColor }: any) {
   return (
     <div className="text-center py-4">
@@ -61,7 +63,7 @@ function ProfileBlock({ data, primaryColor }: any) {
   );
 }
 
-// ===== 2. 링크 =====
+// ===== 2. 留곹겕 =====
 function LinkBlock({ block, primaryColor, isPublic }: any) {
   const { title, url, thumbnail } = block.data;
   const Wrapper = isPublic ? 'a' : 'div';
@@ -83,7 +85,7 @@ function LinkBlock({ block, primaryColor, isPublic }: any) {
         />
       )}
       <div className="flex-1 min-w-0">
-        <div className="font-bold truncate">{title || '제목 없음'}</div>
+        <div className="font-bold truncate">{title || '?쒕ぉ ?놁쓬'}</div>
         {url && (
           <div className="text-xs text-text-3 truncate">
             {url.replace(/^https?:\/\//, '').slice(0, 40)}
@@ -94,7 +96,7 @@ function LinkBlock({ block, primaryColor, isPublic }: any) {
   );
 }
 
-// ===== 3. 상품 그리드 =====
+// ===== 3. ?곹뭹 洹몃━??=====
 function ProductGridBlock({ block, primaryColor, isPublic }: any) {
   const { title, products = [] } = block.data;
 
@@ -103,7 +105,7 @@ function ProductGridBlock({ block, primaryColor, isPublic }: any) {
       {title && <h3 className="font-bold">{title}</h3>}
       {products.length === 0 ? (
         <div className="text-center py-8 border-2 border-dashed border-border rounded-xl text-text-3 text-sm">
-          상품을 추가해주세요
+          ?곹뭹??異붽??댁＜?몄슂
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
@@ -141,13 +143,13 @@ function ProductGridBlock({ block, primaryColor, isPublic }: any) {
   );
 }
 
-// ===== 4. 문의 양식 =====
+// ===== 4. 臾몄쓽 ?묒떇 =====
 function InquiryBlock({ block, primaryColor, isPublic }: any) {
   const { title, buttonText, options = [] } = block.data;
   return (
     <div className="bg-white border border-border rounded-2xl p-5">
       <h3 className="font-bold mb-3 flex items-center gap-2">
-        <MessageSquare className="w-4 h-4" style={{ color: primaryColor }} /> {title || '문의하기'}
+        <MessageSquare className="w-4 h-4" style={{ color: primaryColor }} /> {title || '臾몄쓽?섍린'}
       </h3>
       <div className="space-y-2 mb-4">
         {options.map((opt: string, i: number) => (
@@ -168,13 +170,13 @@ function InquiryBlock({ block, primaryColor, isPublic }: any) {
         style={{ backgroundColor: primaryColor }}
         disabled={!isPublic}
       >
-        {buttonText || '보내기'}
+        {buttonText || '蹂대궡湲?}
       </button>
     </div>
   );
 }
 
-// ===== 5. 달력 =====
+// ===== 5. ?щ젰 =====
 function CalendarBlock({ data, primaryColor }: any) {
   const events = data.events || [];
 
@@ -192,15 +194,15 @@ function CalendarBlock({ data, primaryColor }: any) {
   return (
     <div className="bg-white border border-border rounded-2xl p-5">
       <h3 className="font-bold mb-3 flex items-center gap-2">
-        <Calendar className="w-4 h-4" style={{ color: primaryColor }} /> 일정
+        <Calendar className="w-4 h-4" style={{ color: primaryColor }} /> ?쇱젙
       </h3>
       {events.length === 0 ? (
-        <div className="text-sm text-text-3">일정을 추가해주세요</div>
+        <div className="text-sm text-text-3">?쇱젙??異붽??댁＜?몄슂</div>
       ) : (
         <div className="space-y-2">
           {events.map((ev: any) => (
             <div key={ev.id} className="flex items-center gap-3 p-2">
-              <span className="text-2xl">{ev.emoji || '📅'}</span>
+              <span className="text-2xl">{ev.emoji || '?뱟'}</span>
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-sm truncate">{ev.title}</div>
                 <div className="text-xs text-text-3">
@@ -221,9 +223,20 @@ function CalendarBlock({ data, primaryColor }: any) {
   );
 }
 
-// ===== 6. 이메일 수집 =====
+// ===== 6. ?대찓???섏쭛 =====
 function EmailBlock({ block, primaryColor, isPublic }: any) {
   const { title, description, buttonText } = block.data;
+  if (isPublic) {
+    return (
+      <EmailSubscribe
+        blockId={block.id}
+        title={title}
+        description={description}
+        buttonText={buttonText}
+        primaryColor={primaryColor}
+      />
+    );
+  }
   return (
     <div className="bg-primary-soft border border-primary rounded-2xl p-5">
       <h3 className="font-bold mb-1 flex items-center gap-2">
@@ -234,13 +247,13 @@ function EmailBlock({ block, primaryColor, isPublic }: any) {
         <input
           type="email"
           placeholder="email@example.com"
-          disabled={!isPublic}
+          disabled
           className="flex-1 h-11 px-4 rounded-xl border border-border bg-white"
         />
         <button
           className="h-11 px-5 rounded-xl text-white font-bold"
           style={{ backgroundColor: primaryColor }}
-          disabled={!isPublic}
+          disabled
         >
           {buttonText || '구독'}
         </button>
@@ -249,7 +262,7 @@ function EmailBlock({ block, primaryColor, isPublic }: any) {
   );
 }
 
-// ===== 7. 텍스트 =====
+// ===== 7. ?띿뒪??=====
 function TextBlock({ data }: any) {
   if (data.variant === 'divider') {
     return <hr className="border-border my-2" />;
@@ -260,7 +273,7 @@ function TextBlock({ data }: any) {
   return <p className="text-text-2 text-sm py-1 whitespace-pre-wrap">{data.text}</p>;
 }
 
-// ===== 8. SNS 링크 =====
+// ===== 8. SNS 留곹겕 =====
 function SnsBlock({ data, primaryColor, isPublic }: any) {
   const links = data.links || [];
 
@@ -277,7 +290,7 @@ function SnsBlock({ data, primaryColor, isPublic }: any) {
   return (
     <div className="flex flex-wrap items-center justify-center gap-3 py-2">
       {links.length === 0 ? (
-        <div className="text-text-3 text-sm">SNS 링크를 추가해주세요</div>
+        <div className="text-text-3 text-sm">SNS 留곹겕瑜?異붽??댁＜?몄슂</div>
       ) : (
         links.map((link: any, i: number) => {
           const Icon = icons[link.platform] || MessageCircle;

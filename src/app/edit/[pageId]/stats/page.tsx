@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+﻿import { createClient } from '@/lib/supabase/server';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft, Eye, MousePointerClick, Mail, MessageSquare } from 'lucide-react';
@@ -34,6 +34,12 @@ export default async function StatsPage({ params }: { params: { pageId: string }
     .from('email_submissions')
     .select('*', { count: 'exact', head: true })
     .eq('page_id', page.id);
+
+  const { data: emailSubscribers } = await supabase
+    .from('email_submissions')
+    .select('email, created_at')
+    .eq('page_id', page.id)
+    .order('created_at', { ascending: false });
 
   const totalClicks = (blocks || []).reduce((s, b) => s + (b.click_count || 0), 0);
   const maxClicks = Math.max(1, ...(blocks || []).map(b => b.click_count || 0));
@@ -92,6 +98,32 @@ export default async function StatsPage({ params }: { params: { pageId: string }
           </div>
         )}
 
+                {/* 이메일 구독자 */}
+        <div className='mt-10'>
+          <h2 className='font-bold mb-3'>이메일 구독자</h2>
+
+          {!emailSubscribers || emailSubscribers.length === 0 ? (
+            <div className='text-sm text-text-3 border border-border rounded-xl p-4'>
+              아직 수집된 이메일이 없어요
+            </div>
+          ) : (
+            <div className='border border-border rounded-2xl overflow-hidden'>
+              {emailSubscribers.map((item: any, idx: number) => (
+                <div
+                  key={idx}
+                  className='flex items-center justify-between px-4 py-3 border-b border-border last:border-b-0'
+                >
+                  <div className='font-medium text-sm'>{item.email}</div>
+
+                  <div className='text-xs text-text-3'>
+                    {new Date(item.created_at).toLocaleDateString('ko-KR')}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* 도움말 */}
         <div className="mt-8 p-4 bg-primary-soft border border-primary border-l-4 rounded-xl text-sm">
           <strong>📊 통계 활용 팁</strong>
@@ -131,3 +163,4 @@ function getBlockLabel(block: any): string {
   const title = block.data?.title || block.data?.name;
   return title ? `${baseLabel} · ${title}` : baseLabel;
 }
+

@@ -67,6 +67,10 @@ export default function HomePage() {
         <div className="mt-32 pt-8 border-t border-border text-center text-sm text-text-3">
           <p className="font-bold text-text">자동화하는 링크 페이지</p>
           <p className="text-primary mt-1">AutoLink</p>
+
+<p className="text-xs text-text-3 mt-3">
+  made by <span className="font-bold text-text">Zheila</span>
+</p>
         </div>
       </div>
     </main>

@@ -47,6 +47,20 @@ function getBlockSearchText(block: any) {
     .join(" ");
 }
 
+function SearchBox({ query, setQuery }: any) {
+  return (
+    <div className="relative">
+      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-3" />
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="상품명이나 번호를 검색하세요"
+        className="w-full h-12 pl-9 pr-4 rounded-2xl border border-border bg-white text-sm outline-none focus:border-primary shadow-sm"
+      />
+    </div>
+  );
+}
+
 export function PublicPageClient({
   blocks,
   primaryColor,
@@ -56,29 +70,31 @@ export function PublicPageClient({
 }) {
   const [query, setQuery] = useState("");
 
+  const profileBlock = blocks.find((block: any) => block.type === "profile");
+  const otherBlocks = blocks.filter((block: any) => block.type !== "profile");
+
   const filteredBlocks = useMemo(() => {
     const q = query.trim().toLowerCase();
 
-    if (!q) return blocks;
+    if (!q) return otherBlocks;
 
-    return blocks.filter((block: any) => {
+    return otherBlocks.filter((block: any) => {
       const text = getBlockSearchText(block).toLowerCase();
       return text.includes(q);
     });
-  }, [query, blocks]);
+  }, [query, otherBlocks]);
 
   return (
     <div className="space-y-3">
-      <div className="relative mb-4">
-        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-3" />
-
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="상품명이나 번호를 검색하세요"
-          className="w-full h-12 pl-9 pr-4 rounded-2xl border border-border bg-white text-sm outline-none focus:border-primary shadow-sm"
+      {profileBlock && (
+        <BlockPreview
+          block={profileBlock as Block}
+          primaryColor={primaryColor}
+          isPublic={true}
         />
-      </div>
+      )}
+
+      <SearchBox query={query} setQuery={setQuery} />
 
       {filteredBlocks.length === 0 ? (
         <div className="bg-white border border-border rounded-2xl p-6 text-center text-sm text-text-3">

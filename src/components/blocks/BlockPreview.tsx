@@ -214,13 +214,30 @@ function TextBlock({ data }: any) {
   return <p className="text-text-2 text-sm py-1 whitespace-pre-wrap">{data.text}</p>;
 }
 
+function ThreadsIcon({ className = "", style }: any) {
+  return (
+    <span
+      className={className}
+      style={{
+        ...style,
+        fontWeight: 900,
+        fontSize: "22px",
+        lineHeight: 1,
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      @
+    </span>
+  );
+}
+
 function SnsBlock({ data, primaryColor, isPublic }: any) {
   const links = data.links || [];
 
   const icons: Record<string, any> = {
     instagram: Instagram,
     youtube: Youtube,
-    threads: MessageCircle,
+    threads: ThreadsIcon,
     tiktok: Music2,
     twitter: Twitter,
     kakao: MessageCircle,

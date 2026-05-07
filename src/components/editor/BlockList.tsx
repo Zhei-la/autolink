@@ -14,14 +14,14 @@ interface Props {
 }
 
 const BLOCK_TYPES: { type: BlockType; label: string; emoji: string }[] = [
-  { type: 'profile', label: '프로필', emoji: '👤' },
-  { type: 'link', label: '링크', emoji: '🔗' },
-  { type: 'product_grid', label: '상품 그리드', emoji: '🛍️' },
-  { type: 'inquiry', label: '문의 양식', emoji: '💬' },
-  { type: 'calendar', label: '달력', emoji: '📅' },
-  { type: 'email', label: '이메일 수집', emoji: '📧' },
-  { type: 'text', label: '텍스트', emoji: '📝' },
-  { type: 'sns', label: 'SNS 링크', emoji: '✨' },
+  { type: 'profile', label: '?꾨줈??, emoji: '?뫀' },
+  { type: 'link', label: '留곹겕', emoji: '?뵕' },
+  { type: 'product_grid', label: '?곹뭹 洹몃━??, emoji: '?썚截? },
+  { type: 'inquiry', label: '臾몄쓽 ?묒떇', emoji: '?뮠' },
+  { type: 'calendar', label: '?щ젰', emoji: '?뱟' },
+  { type: 'email', label: '?대찓???섏쭛', emoji: '?벁' },
+  { type: 'text', label: '?띿뒪??, emoji: '?뱷' },
+  { type: 'sns', label: 'SNS 留곹겕', emoji: '?? },
 ];
 
 export function BlockList({ pageId, blocks, primaryColor }: Props) {
@@ -45,7 +45,7 @@ export function BlockList({ pageId, blocks, primaryColor }: Props) {
       } else if (action === 'duplicate') {
         await duplicateBlock(pageId, blockId);
       } else if (action === 'delete') {
-        if (!confirm('삭제하시겠어요? 이 블록의 통계 데이터도 함께 삭제됩니다.')) return;
+        if (!confirm('??젣?섏떆寃좎뼱?? ??釉붾줉???듦퀎 ?곗씠?곕룄 ?④퍡 ??젣?⑸땲??')) return;
         await deleteBlock(pageId, blockId);
       } else if (action === 'toggle') {
         await toggleBlockActive(pageId, blockId);
@@ -60,7 +60,7 @@ export function BlockList({ pageId, blocks, primaryColor }: Props) {
       <div className="space-y-3">
         {blocks.length === 0 ? (
           <div className="text-center py-12 border-2 border-dashed border-border rounded-2xl">
-            <p className="text-text-2 mb-4">아직 블록이 없어요</p>
+            <p className="text-text-2 mb-4">?꾩쭅 釉붾줉???놁뼱??/p>
           </div>
         ) : (
           blocks.map((block, idx) => (
@@ -84,40 +84,40 @@ export function BlockList({ pageId, blocks, primaryColor }: Props) {
                       onClick={() => { setEditingBlock(block); setOpenMenuId(null); }}
                       className="w-full text-left px-4 py-2.5 hover:bg-primary-soft flex items-center gap-2 text-sm font-bold"
                     >
-                      <Edit3 className="w-4 h-4" /> 수정하기
+                      <Edit3 className="w-4 h-4" /> ?섏젙?섍린
                     </button>
                     <button
                       onClick={() => handleAction(block.id, 'up')}
                       disabled={idx === 0}
                       className="w-full text-left px-4 py-2.5 hover:bg-primary-soft flex items-center gap-2 text-sm disabled:opacity-30"
                     >
-                      <ChevronUp className="w-4 h-4" /> 위로 이동
+                      <ChevronUp className="w-4 h-4" /> ?꾨줈 ?대룞
                     </button>
                     <button
                       onClick={() => handleAction(block.id, 'down')}
                       disabled={idx === blocks.length - 1}
                       className="w-full text-left px-4 py-2.5 hover:bg-primary-soft flex items-center gap-2 text-sm disabled:opacity-30"
                     >
-                      <ChevronDown className="w-4 h-4" /> 아래로 이동
+                      <ChevronDown className="w-4 h-4" /> ?꾨옒濡??대룞
                     </button>
                     <button
                       onClick={() => handleAction(block.id, 'duplicate')}
                       className="w-full text-left px-4 py-2.5 hover:bg-primary-soft flex items-center gap-2 text-sm"
                     >
-                      <Copy className="w-4 h-4" /> 복제
+                      <Copy className="w-4 h-4" /> 蹂듭젣
                     </button>
                     <button
                       onClick={() => handleAction(block.id, 'toggle')}
                       className="w-full text-left px-4 py-2.5 hover:bg-primary-soft flex items-center gap-2 text-sm"
                     >
                       {block.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      {block.is_active ? '비활성화' : '활성화'}
+                      {block.is_active ? '鍮꾪솢?깊솕' : '?쒖꽦??}
                     </button>
                     <button
                       onClick={() => handleAction(block.id, 'delete')}
                       className="w-full text-left px-4 py-2.5 hover:bg-red-50 text-red-500 flex items-center gap-2 text-sm border-t border-border"
                     >
-                      <Trash2 className="w-4 h-4" /> 삭제
+                      <Trash2 className="w-4 h-4" /> ??젣
                     </button>
                   </div>
                 )}
@@ -130,11 +130,11 @@ export function BlockList({ pageId, blocks, primaryColor }: Props) {
           onClick={() => setShowAddSheet(true)}
           className="w-full h-14 border-2 border-dashed border-border rounded-2xl text-text-2 font-bold hover:border-primary hover:text-primary hover:bg-primary-soft transition flex items-center justify-center gap-2"
         >
-          <Plus className="w-5 h-5" /> 블록 추가
+          <Plus className="w-5 h-5" /> 釉붾줉 異붽?
         </button>
       </div>
 
-      {/* 블록 추가 모달 - PC와 모바일 모두 가운데 작게 */}
+      {/* 釉붾줉 異붽? 紐⑤떖 - PC? 紐⑤컮??紐⑤몢 媛?대뜲 ?묎쾶 */}
       {showAddSheet && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
@@ -145,7 +145,7 @@ export function BlockList({ pageId, blocks, primaryColor }: Props) {
             className="bg-white w-full max-w-sm rounded-2xl max-h-[85vh] overflow-y-auto"
           >
             <div className="border-b border-border p-4 sticky top-0 bg-white">
-              <h2 className="font-bold text-base">블록 추가</h2>
+              <h2 className="font-bold text-base">釉붾줉 異붽?</h2>
             </div>
             <div className="grid grid-cols-2 gap-2 p-4">
               {BLOCK_TYPES.map((b) => (

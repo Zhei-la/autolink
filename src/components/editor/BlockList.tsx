@@ -147,12 +147,12 @@ export function BlockList({ pageId, blocks, primaryColor }: Props) {
             <div className="border-b border-border p-4 sticky top-0 bg-white">
               <h2 className="font-bold text-base">블록 추가</h2>
             </div>
-            <div className="grid grid-cols-2 gap-2 p-4">
+            <div className="grid grid-cols-2 gap-2 p-4 auto-rows-auto">
               {BLOCK_TYPES.map((b) => (
                 <button
                   key={b.type}
                   onClick={() => handleAdd(b.type)}
-                  className="h-20 sm:h-24 border border-border rounded-xl hover:border-primary hover:bg-primary-soft flex flex-col items-center justify-center gap-1 transition"
+                  className="h-20 sm:h-24 min-h-0 !aspect-auto border border-border rounded-xl hover:border-primary hover:bg-primary-soft flex flex-col items-center justify-center gap-1 transition"
                 >
                   <span className="text-xl">{b.emoji}</span>
                   <span className="text-xs font-bold">{b.label}</span>
@@ -173,3 +173,4 @@ export function BlockList({ pageId, blocks, primaryColor }: Props) {
     </>
   );
 }
+

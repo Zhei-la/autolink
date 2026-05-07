@@ -11,22 +11,22 @@ interface Props {
 }
 
 const COLOR_PRESETS = [
-  { name: '주황', value: '#f97316' },
-  { name: '검정', value: '#0a0b0d' },
-  { name: '파랑', value: '#3b82f6' },
-  { name: '빨강', value: '#ef4444' },
-  { name: '핑크', value: '#ec4899' },
-  { name: '보라', value: '#8b5cf6' },
-  { name: '초록', value: '#10b981' },
+  { name: '二쇳솴', value: '#f97316' },
+  { name: '寃??, value: '#0a0b0d' },
+  { name: '?뚮옉', value: '#3b82f6' },
+  { name: '鍮④컯', value: '#ef4444' },
+  { name: '?묓겕', value: '#ec4899' },
+  { name: '蹂대씪', value: '#8b5cf6' },
+  { name: '珥덈줉', value: '#10b981' },
 ];
 
 const BG_PRESETS = [
-  { name: '연회색', value: '#fafafa' },
-  { name: '흰색', value: '#ffffff' },
-  { name: '연주황', value: '#fff7ed' },
-  { name: '연파랑', value: '#eff6ff' },
-  { name: '연핑크', value: '#fdf2f8' },
-  { name: '연초록', value: '#f0fdf4' },
+  { name: '?고쉶??, value: '#fafafa' },
+  { name: '?곗깋', value: '#ffffff' },
+  { name: '?곗＜??, value: '#fff7ed' },
+  { name: '?고뙆??, value: '#eff6ff' },
+  { name: '?고븨??, value: '#fdf2f8' },
+  { name: '?곗큹濡?, value: '#f0fdf4' },
 ];
 
 export function PageSettingsForm({ page }: Props) {
@@ -58,7 +58,7 @@ export function PageSettingsForm({ page }: Props) {
           bgColor,
         },
       });
-      setInfo('저장되었습니다');
+      setInfo('??λ릺?덉뒿?덈떎');
       router.refresh();
     } catch (e: any) {
       setError(e.message);
@@ -68,7 +68,7 @@ export function PageSettingsForm({ page }: Props) {
   }
 
   async function handleDelete() {
-    if (!confirm(`정말 "${title}" 페이지를 삭제하시겠어요? 모든 블록·통계가 함께 삭제되며 복구할 수 없습니다.`)) return;
+    if (!confirm(`?뺣쭚 "${title}" ?섏씠吏瑜???젣?섏떆寃좎뼱?? 紐⑤뱺 釉붾줉쨌?듦퀎媛 ?④퍡 ??젣?섎ŉ 蹂듦뎄?????놁뒿?덈떎.`)) return;
     setDeleting(true);
     try {
       await deletePage(page.id);
@@ -80,11 +80,11 @@ export function PageSettingsForm({ page }: Props) {
 
   return (
     <form onSubmit={handleSave} className="space-y-6">
-      {/* 기본 정보 */}
+      {/* 湲곕낯 ?뺣낫 */}
       <section>
-        <h2 className="font-bold mb-3">기본 정보</h2>
+        <h2 className="font-bold mb-3">湲곕낯 ?뺣낫</h2>
         <div className="space-y-3">
-          <Input label="페이지 이름" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={50} required />
+          <Input label="?섏씠吏 ?대쫫" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={50} required />
           <div>
             <label className="block text-sm font-bold mb-2">URL</label>
             <div className="flex items-center gap-1 px-4 h-12 border border-border rounded-xl">
@@ -92,23 +92,23 @@ export function PageSettingsForm({ page }: Props) {
               <input
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
-                pattern="[a-z0-9-]{3,30}"
+                pattern="[a-z0-9\-]{3,30}"
                 required
                 className="flex-1 outline-none bg-transparent"
               />
             </div>
-            <p className="text-xs text-text-3 mt-1">영문 소문자, 숫자, 하이픈만 가능 · 변경 시 기존 URL 작동 X</p>
+            <p className="text-xs text-text-3 mt-1">?곷Ц ?뚮Ц?? ?レ옄, ?섏씠?덈쭔 媛??쨌 蹂寃???湲곗〈 URL ?묐룞 X</p>
           </div>
         </div>
       </section>
 
-      {/* 공개 설정 */}
+      {/* 怨듦컻 ?ㅼ젙 */}
       <section>
-        <h2 className="font-bold mb-3">공개 설정</h2>
+        <h2 className="font-bold mb-3">怨듦컻 ?ㅼ젙</h2>
         <label className="flex items-center justify-between p-4 border border-border rounded-xl cursor-pointer">
           <div>
-            <div className="font-bold text-sm">페이지 공개</div>
-            <div className="text-xs text-text-3 mt-0.5">{isPublished ? '누구나 URL로 접속 가능' : 'URL을 알아도 접속 불가'}</div>
+            <div className="font-bold text-sm">?섏씠吏 怨듦컻</div>
+            <div className="text-xs text-text-3 mt-0.5">{isPublished ? '?꾧뎄??URL濡??묒냽 媛?? : 'URL???뚯븘???묒냽 遺덇?'}</div>
           </div>
           <input
             type="checkbox"
@@ -119,9 +119,9 @@ export function PageSettingsForm({ page }: Props) {
         </label>
       </section>
 
-      {/* 디자인 - 포인트 색 */}
+      {/* ?붿옄??- ?ъ씤????*/}
       <section>
-        <h2 className="font-bold mb-3">포인트 색깔</h2>
+        <h2 className="font-bold mb-3">?ъ씤???됯퉼</h2>
         <div className="grid grid-cols-7 gap-2">
           {COLOR_PRESETS.map((c) => (
             <button
@@ -135,7 +135,7 @@ export function PageSettingsForm({ page }: Props) {
           ))}
         </div>
         <Input
-          label="직접 입력 (HEX)"
+          label="吏곸젒 ?낅젰 (HEX)"
           value={primaryColor}
           onChange={(e) => setPrimaryColor(e.target.value)}
           placeholder="#f97316"
@@ -143,9 +143,9 @@ export function PageSettingsForm({ page }: Props) {
         />
       </section>
 
-      {/* 디자인 - 배경색 */}
+      {/* ?붿옄??- 諛곌꼍??*/}
       <section>
-        <h2 className="font-bold mb-3">배경색</h2>
+        <h2 className="font-bold mb-3">諛곌꼍??/h2>
         <div className="grid grid-cols-6 gap-2">
           {BG_PRESETS.map((c) => (
             <button
@@ -160,22 +160,22 @@ export function PageSettingsForm({ page }: Props) {
         </div>
       </section>
 
-      {/* 저장/오류 */}
+      {/* ????ㅻ쪟 */}
       {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">{error}</div>}
       {info && <div className="p-3 bg-primary-soft border border-primary rounded-lg text-sm text-primary-dark">{info}</div>}
 
-      <Button type="submit" loading={saving} size="lg" className="w-full">저장</Button>
+      <Button type="submit" loading={saving} size="lg" className="w-full">???/Button>
 
-      {/* 위험 영역 */}
+      {/* ?꾪뿕 ?곸뿭 */}
       <section className="pt-8 border-t border-border">
-        <h2 className="font-bold mb-3 text-red-500">위험 영역</h2>
+        <h2 className="font-bold mb-3 text-red-500">?꾪뿕 ?곸뿭</h2>
         <button
           type="button"
           onClick={handleDelete}
           disabled={deleting}
           className="w-full h-12 border border-red-300 text-red-500 font-bold rounded-xl hover:bg-red-50 transition"
         >
-          {deleting ? '삭제 중...' : '페이지 삭제'}
+          {deleting ? '??젣 以?..' : '?섏씠吏 ??젣'}
         </button>
       </section>
     </form>

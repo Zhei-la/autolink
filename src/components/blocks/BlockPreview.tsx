@@ -3,6 +3,7 @@ import { Mail, Calendar, MessageSquare, Instagram, Youtube, Twitter, MessageCirc
 import type { Block } from '@/types';
 import { EmailSubscribe } from './EmailSubscribe';
 import { InquirySubmit } from './InquirySubmit';
+import { ProductGridSearch } from './ProductGridSearch';
 
 export function BlockPreview({
   block,
@@ -81,40 +82,15 @@ function LinkBlock({ block, primaryColor, isPublic }: any) {
 
 function ProductGridBlock({ block, primaryColor, isPublic }: any) {
   const { title, products = [] } = block.data;
+
   return (
-    <div className="space-y-3">
-      {title && <h3 className="font-bold">{title}</h3>}
-      {products.length === 0 ? (
-        <div className="text-center py-8 border-2 border-dashed border-border rounded-xl text-text-3 text-sm">
-          상품을 추가해주세요
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-3">
-          {products.map((product: any) => {
-            const Wrapper: any = isPublic ? 'a' : 'div';
-            const wrapperProps = isPublic
-              ? { href: `/api/click/${block.id}?to=${encodeURIComponent(product.url || '#')}`, target: '_blank', rel: 'noopener' }
-              : {};
-            return (
-              <Wrapper
-                key={product.id}
-                {...wrapperProps}
-                className="bg-white border border-border rounded-xl overflow-hidden hover:border-primary transition cursor-pointer"
-              >
-                <div className="aspect-square bg-text-3/10">
-                  {product.thumbnail && <img src={product.thumbnail} alt="" className="w-full h-full object-cover" />}
-                </div>
-                <div className="p-3">
-                  <div className="text-sm font-bold line-clamp-2 mb-1">{product.title}</div>
-                  {product.discount > 0 && <span className="text-xs font-bold text-red-500 mr-1">{product.discount}%</span>}
-                  {product.price > 0 && <span className="text-sm font-bold">{formatPrice(product.price)}</span>}
-                </div>
-              </Wrapper>
-            );
-          })}
-        </div>
-      )}
-    </div>
+    <ProductGridSearch
+      blockId={block.id}
+      title={title}
+      products={products}
+      primaryColor={primaryColor}
+      isPublic={isPublic}
+    />
   );
 }
 

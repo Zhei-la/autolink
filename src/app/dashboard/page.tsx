@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, ExternalLink, Edit3, ShieldCheck, BarChart3 } from 'lucide-react';
 import { getMyAccount, STATUS_MESSAGE } from '@/lib/db/account';
+import { Logo } from '@/components/brand/Logo';
+import { publicUrlLabel } from '@/lib/theme';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,19 +32,12 @@ export default async function DashboardPage({
   const canCreate = effectiveStatus === 'active' && pageCount < pageLimit;
 
   return (
-    <main className="min-h-screen bg-white">
-      <div className="h-2 bg-primary" />
+    <main className="min-h-screen bg-[#f2f2f4]">
 
-      <header className="border-b border-border">
+      <header className="bg-white border-b border-border">
         <div className="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-white font-black text-sm">A</span>
-            </div>
-            <div className="font-black">
-              <span className="text-text">auto</span>
-              <span className="text-primary">link</span>
-            </div>
+            <Logo size="sm" />
           </Link>
 
           <div className="flex items-center gap-4">
@@ -84,7 +79,7 @@ export default async function DashboardPage({
 
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-black mb-1">내 페이지</h1>
+            <h1 className="text-3xl font-black mb-1">멀티 페이지 관리</h1>
             <p className="text-text-2 text-sm">
               {pageCount} / {pageLimit}개
             </p>
@@ -124,7 +119,7 @@ export default async function DashboardPage({
         ) : (
           <div className="grid gap-3">
             {pages.map((page) => (
-              <div key={page.id} className="border border-border rounded-2xl p-5 hover:border-primary transition">
+              <div key={page.id} className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -137,9 +132,10 @@ export default async function DashboardPage({
                       href={`/p/${page.slug}`}
                       target="_blank"
                       rel="noopener"
-                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                      className="inline-flex items-center gap-1 text-sm text-[#3b6cf6] hover:underline"
                     >
-                      /p/{page.slug} <ExternalLink className="w-3 h-3" />
+                      {process.env.NEXT_PUBLIC_PUBLIC_HOST ? publicUrlLabel(page.slug) : `/p/${page.slug}`}{' '}
+                      <ExternalLink className="w-3 h-3" />
                     </a>
                     <div className="flex items-center gap-3 mt-2 text-xs text-text-3">
                       <span>방문 {page.view_count}회</span>

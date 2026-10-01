@@ -18,7 +18,6 @@ export default async function AdminPage() {
 
   return (
     <main className="min-h-screen bg-white pb-20">
-      <div className="h-2 bg-primary" />
 
       <header className="border-b border-border sticky top-0 bg-white z-30">
         <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between">

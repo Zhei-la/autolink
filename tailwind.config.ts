@@ -9,11 +9,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // 오토링크 브랜드 컬러
+        // By링크 브랜드 컬러 (흑백 톤)
         primary: {
-          DEFAULT: '#f97316',
-          dark: '#ea580c',
-          soft: '#fff7ed',
+          DEFAULT: '#111111',
+          dark: '#000000',
+          soft: '#f4f4f5',
         },
         text: {
           DEFAULT: '#111111',

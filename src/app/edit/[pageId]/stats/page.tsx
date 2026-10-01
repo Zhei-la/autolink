@@ -1,167 +1,146 @@
+import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { redirect, notFound } from 'next/navigation';
-import Link from 'next/link';
-import { ChevronLeft, Eye, MousePointerClick, MessageSquare } from 'lucide-react';
-import { EmailSubscribersModal } from './EmailSubscribersModal';
+import { getMyAccount } from '@/lib/db/account';
+import { StatsView, type StatsData } from '@/components/stats/StatsView';
+import { blockMeta, blockSummary } from '@/components/editor/blockTypes';
+import {
+  INAPP_LABEL,
+  SOURCE_LABEL,
+  classifyHost,
+  deviceFromUA,
+  fetchAllRows,
+  hostOf,
+  kstDay,
+  resolveRange,
+} from '@/lib/analytics';
 
-export default async function StatsPage({ params }: { params: { pageId: string } }) {
+export const dynamic = 'force-dynamic';
+
+const CLICKABLE = new Set(['link', 'link_collection', 'image_banner', 'product_grid', 'sns']);
+
+export default async function StatsPage({
+  params,
+  searchParams,
+}: {
+  params: { pageId: string };
+  searchParams: { range?: string; from?: string; to?: string };
+}) {
   const supabase = createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect('/login');
+  const { user } = await getMyAccount();
+  if (!user) notFound();
 
   const { data: page } = await supabase
     .from('pages')
-    .select('*')
+    .select('id, slug, view_count, created_at')
     .eq('id', params.pageId)
     .eq('user_id', user.id)
     .maybeSingle();
-
   if (!page) notFound();
 
-  const { data: blocks } = await supabase
-    .from('blocks')
-    .select('id, type, position, click_count, data')
-    .eq('page_id', page.id)
-    .order('click_count', { ascending: false });
+  const range = resolveRange(searchParams.range, searchParams.from, searchParams.to, page.created_at);
+  const startIso = new Date(range.startMs).toISOString();
+  const endIso = new Date(range.endMs).toISOString();
 
-  const { count: inquiryCount } = await supabase
-    .from('inquiry_submissions')
-    .select('*', { count: 'exact', head: true })
-    .eq('page_id', page.id);
+  const [{ data: blocks }, viewsRes, clicksRes] = await Promise.all([
+    supabase.from('blocks').select('id, type, data, position').eq('page_id', page.id).order('position'),
+    // 방문 상세 (마이그레이션 001 의 page_views). 없으면 error → 클릭만으로 표시
+    fetchAllRows(supabase as any, 'page_views', 'viewed_at, visitor_hash, referrer, referrer_source, device_type, inapp_app', (q) =>
+      q.eq('page_id', page.id).gte('viewed_at', startIso).lte('viewed_at', endIso).order('viewed_at')
+    ),
+    // 클릭 (기본 스키마에 있음). 001 이전 DB 에도 있는 컬럼만 고르기 위해 * 사용
+    fetchAllRows(supabase as any, 'click_events', '*', (q) =>
+      q.eq('page_id', page.id).gte('created_at', startIso).lte('created_at', endIso).order('created_at')
+    ),
+  ]);
 
-  const { count: emailCount } = await supabase
-    .from('email_submissions')
-    .select('*', { count: 'exact', head: true })
-    .eq('page_id', page.id);
+  const viewsAvailable = !viewsRes.error;
+  const views = viewsRes.rows;
+  const clicks = clicksRes.rows;
 
-  const { data: emailSubscribers } = await supabase
-    .from('email_submissions')
-    .select('email, created_at')
-    .eq('page_id', page.id)
-    .order('created_at', { ascending: false });
+  // 일별
+  const byDay = new Map(range.days.map((d) => [d, { day: d, views: 0, clicks: 0 }]));
+  views.forEach((v) => {
+    const r = byDay.get(kstDay(v.viewed_at));
+    if (r) r.views++;
+  });
+  clicks.forEach((c) => {
+    const r = byDay.get(kstDay(c.created_at));
+    if (r) r.clicks++;
+  });
 
-  const totalClicks = (blocks || []).reduce((sum, block) => sum + (block.click_count || 0), 0);
-  const maxClicks = Math.max(1, ...(blocks || []).map((block) => block.click_count || 0));
+  // 블록별 클릭
+  const clickCount = new Map<string, number>();
+  clicks.forEach((c) => clickCount.set(c.block_id, (clickCount.get(c.block_id) || 0) + 1));
+  const blockRows = (blocks || [])
+    .filter((b) => CLICKABLE.has(b.type) || clickCount.has(b.id))
+    .map((b) => {
+      const meta = blockMeta(b.type);
+      const summary = blockSummary(b as any);
+      return {
+        id: b.id,
+        type: b.type,
+        label: summary ? `${meta.label} · ${summary}` : meta.label,
+        clicks: clickCount.get(b.id) || 0,
+      };
+    });
 
-  return (
-    <main className="min-h-screen bg-white pb-20">
-      <div className="h-2 bg-primary" />
+  // 유입 채널: 리퍼러 도메인 기준
+  const channels = new Map<string, { key: string; label: string; host: string | null; views: number; visitors: Set<string>; clicks: number }>();
+  const channelOf = (referrer: string | null | undefined, source?: string | null) => {
+    const host = hostOf(referrer);
+    const src = host ? classifyHost(host) : source && source !== 'other' ? source : 'direct';
+    const key = host || src;
+    if (!channels.has(key)) {
+      channels.set(key, { key, label: SOURCE_LABEL[src] || src, host, views: 0, visitors: new Set(), clicks: 0 });
+    }
+    return channels.get(key)!;
+  };
+  views.forEach((v) => {
+    const ch = channelOf(v.referrer, v.referrer_source);
+    ch.views++;
+    if (v.visitor_hash) ch.visitors.add(v.visitor_hash);
+  });
+  clicks.forEach((c) => {
+    channelOf(c.referrer, c.referrer_source).clicks++;
+  });
 
-      <header className="border-b border-border">
-        <div className="mx-auto max-w-3xl px-4 py-3 flex items-center justify-between">
-          <Link
-            href={`/edit/${page.id}`}
-            className="inline-flex items-center gap-1 text-sm text-text-2 hover:text-text"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            편집기로
-          </Link>
+  // 기기
+  const devices = { mobile: 0, pc: 0 };
+  const inapp = new Map<string, number>();
+  views.forEach((v) => {
+    const d = v.device_type === 'pc' ? 'pc' : 'mobile';
+    devices[d]++;
+    if (v.inapp_app) inapp.set(v.inapp_app, (inapp.get(v.inapp_app) || 0) + 1);
+  });
+  if (!viewsAvailable) {
+    clicks.forEach((c) => devices[deviceFromUA(c.user_agent)]++);
+  }
 
-          <div className="font-bold text-sm">통계</div>
+  const visitors = new Set(views.map((v) => v.visitor_hash).filter(Boolean)).size;
 
-          <div className="w-16" />
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-3xl px-4 py-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-          <StatCard icon={Eye} label="총 방문" value={page.view_count || 0} />
-          <StatCard icon={MousePointerClick} label="총 클릭" value={totalClicks} />
-          <EmailSubscribersModal subscribers={emailSubscribers || []} />
-          <StatCard icon={MessageSquare} label="문의" value={inquiryCount || 0} />
-        </div>
-
-        <h2 className="font-bold mb-3">블록별 클릭 순위</h2>
-
-        {!blocks || blocks.length === 0 ? (
-          <div className="text-text-3 text-sm py-8 text-center">
-            아직 데이터가 없어요
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {blocks.map((block: any, idx: number) => {
-              const label = getBlockLabel(block);
-              const clickCount = block.click_count || 0;
-              const percent = (clickCount / maxClicks) * 100;
-
-              return (
-                <div key={block.id} className="border border-border rounded-xl p-3">
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-xs text-text-3 font-bold">
-                        #{idx + 1}
-                      </span>
-
-                      <span className="text-sm font-bold truncate">
-                        {label}
-                      </span>
-                    </div>
-
-                    <span className="text-sm font-bold flex-shrink-0">
-                      {clickCount}회
-                    </span>
-                  </div>
-
-                  <div className="h-1.5 bg-text-3/10 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary rounded-full transition-all"
-                      style={{ width: `${percent}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="mt-8 p-4 bg-primary-soft border border-primary border-l-4 rounded-xl text-sm">
-          <strong>📊 통계 활용 팁</strong>
-
-          <ul className="mt-2 space-y-1 list-disc list-inside text-text-2">
-            <li>잘 되는 블록을 더 위로 이동하면 클릭률이 더 올라가요</li>
-            <li>방문 대비 클릭률이 20~40%면 잘 작동하는 페이지예요</li>
-            <li>안 되는 블록은 카피를 바꾸거나 삭제해보세요</li>
-          </ul>
-        </div>
-      </div>
-    </main>
-  );
-}
-
-function StatCard({ icon: Icon, label, value }: any) {
-  return (
-    <div className="border border-border rounded-2xl p-4">
-      <Icon className="w-5 h-5 text-primary mb-2" />
-
-      <div className="text-2xl font-black">
-        {value.toLocaleString()}
-      </div>
-
-      <div className="text-xs text-text-3">
-        {label}
-      </div>
-    </div>
-  );
-}
-
-function getBlockLabel(block: any): string {
-  const typeLabels: Record<string, string> = {
-    profile: '프로필',
-    link: '링크',
-    product_grid: '상품',
-    inquiry: '문의',
-    calendar: '달력',
-    email: '이메일',
-    text: '텍스트',
-    sns: 'SNS',
+  const data: StatsData = {
+    range: range.key,
+    from: range.days[0],
+    to: range.days[range.days.length - 1],
+    views: viewsAvailable ? views.length : range.key === 'all' ? page.view_count || 0 : 0,
+    visitors,
+    clicks: clicks.length,
+    daily: Array.from(byDay.values()),
+    blocks: blockRows,
+    channels: Array.from(channels.values())
+      .map((c) => ({ key: c.key, label: c.label, host: c.host, views: c.views, visitors: c.visitors.size, clicks: c.clicks }))
+      .sort((a, b) => b.views - a.views || b.clicks - a.clicks),
+    devices,
+    inapp: Array.from(inapp.entries())
+      .map(([key, count]) => ({ key, label: INAPP_LABEL[key] || key, count }))
+      .sort((a, b) => b.count - a.count),
+    viewsAvailable,
+    slug: page.slug,
   };
 
-  const baseLabel = typeLabels[block.type] || block.type;
-  const title = block.data?.title || block.data?.name;
-
-  return title ? `${baseLabel} · ${title}` : baseLabel;
+  return (
+    <main className="mx-auto max-w-[560px] px-4 pt-1">
+      <StatsView data={data} />
+    </main>
+  );
 }

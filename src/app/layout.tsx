@@ -2,12 +2,12 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: '오토링크 - 자동화하는 링크 페이지',
-  description: '인스타·스레드·유튜브 댓글 자동 응대 + 미니 홈페이지를 한 번에. 쇼츠 한 편으로 매출 만드는 가장 빠른 방법.',
-  keywords: ['오토링크', '인스타 자동화', '링크 페이지', 'autolink', 'DM 자동화'],
+  title: 'By링크 - 바이란 링크',
+  description: '링크 하나로 내 브랜드를 보여주는 페이지. 사진·링크·SNS·문의를 한 화면에 담고 방문 통계까지 확인하세요.',
+  keywords: ['By링크', '바이란 링크', '링크 페이지', '프로필 링크', '바이란미디어'],
   openGraph: {
-    title: '오토링크',
-    description: '자동화하는 링크 페이지',
+    title: 'By링크',
+    description: '바이란 링크 — 링크 하나로 내 브랜드를 보여주세요',
     locale: 'ko_KR',
     type: 'website',
   },
@@ -17,7 +17,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#f97316',
+  themeColor: '#ffffff',
 };
 
 export default function RootLayout({

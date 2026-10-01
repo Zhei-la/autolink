@@ -20,7 +20,6 @@ export default async function NewPagePage() {
 
   return (
     <main className="min-h-screen bg-white">
-      <div className="h-2 bg-primary" />
 
       <header className="border-b border-border">
         <div className="mx-auto max-w-3xl px-6 py-4">

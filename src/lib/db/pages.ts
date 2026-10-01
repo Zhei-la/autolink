@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { isValidSlug } from '@/lib/utils';
+import { isValidSlug, RESERVED_SLUGS } from '@/lib/utils';
 import { DEFAULT_THEME } from '@/types';
 import { assertCanEdit } from './account';
 
@@ -46,8 +46,8 @@ export async function createPage(formData: FormData): Promise<ActionResult> {
     // 자동 슬러그도 중복될 수 있음 (두 번째 페이지) → 접미사
     const { data: dup } = await supabase.from('pages').select('id').eq('slug', slug).maybeSingle();
     if (dup) slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
-  } else if (!isValidSlug(slug)) {
-    return { ok: false, error: 'URL은 영문 소문자, 숫자, 하이픈만 가능해요 (3~30자)' };
+  } else if (!isValidSlug(slug) || RESERVED_SLUGS.has(slug)) {
+    return { ok: false, error: '주소는 영문 소문자·숫자·하이픈(-)·밑줄(_)·마침표(.)로 3~30자예요' };
   }
 
   const { data: existing } = await supabase.from('pages').select('id').eq('slug', slug).maybeSingle();
@@ -69,7 +69,8 @@ export async function createPage(formData: FormData): Promise<ActionResult> {
 
   if (error) {
     // 동시 생성 등으로 unique 제약에 걸린 경우
-    if (error.code === '23505') return { ok: false, error: '이미 사용 중인 URL이에요.' };
+    if (error.code === '23505') return { ok: false, error: '이미 사용 중인 주소예요.' };
+    if (error.code === '23514') return { ok: false, error: '밑줄(_)·마침표(.)가 들어간 주소는 DB 업데이트(마이그레이션 002) 후에 쓸 수 있어요.' };
     return { ok: false, error: `페이지 생성 실패: ${error.message}` };
   }
 
@@ -79,8 +80,10 @@ export async function createPage(formData: FormData): Promise<ActionResult> {
     position: 0,
     data: {
       name: title,
-      bio: '한 줄 소개를 입력해주세요',
+      bio: '',
       initial: title.charAt(0).toUpperCase(),
+      layout: 'circle',
+      titleSize: 'm',
     },
   });
 
@@ -100,8 +103,8 @@ export async function updatePage(
 
   if (updates.slug !== undefined) {
     const slug = updates.slug.trim().toLowerCase();
-    if (!isValidSlug(slug)) {
-      throw new Error('URL은 영문 소문자, 숫자, 하이픈만 가능합니다 (3~30자)');
+    if (!isValidSlug(slug) || RESERVED_SLUGS.has(slug)) {
+      throw new Error('주소는 영문 소문자·숫자·하이픈(-)·밑줄(_)·마침표(.)로 3~30자예요');
     }
     const { data: existing } = await supabase
       .from('pages')
@@ -120,12 +123,13 @@ export async function updatePage(
     .eq('user_id', user.id);
 
   if (error) {
-    if (error.code === '23505') throw new Error('이미 사용 중인 URL이에요');
+    if (error.code === '23505') throw new Error('이미 사용 중인 주소예요');
+    if (error.code === '23514') throw new Error('밑줄(_)·마침표(.)가 들어간 주소는 DB 업데이트(마이그레이션 002) 후에 쓸 수 있어요.');
     throw new Error(error.message);
   }
 
   revalidatePath('/dashboard');
-  revalidatePath(`/edit/${pageId}`);
+  revalidatePath(`/edit/${pageId}`, 'layout');
 }
 
 /**

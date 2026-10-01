@@ -1,45 +1,23 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
-import { PublicPageClient } from '@/components/blocks/PublicPageClient';
+import { PageView } from '@/components/page/PageView';
 import { ViewTracker } from '@/components/blocks/ViewTracker';
 import type { Block } from '@/types';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { resolveTheme } from '@/lib/theme';
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export const dynamic = 'force-dynamic';
+
+async function loadPage(slug: string) {
   const supabase = createClient();
-  const { data: page } = await supabase
-    .from('pages')
-    .select('title, slug')
-    .eq('slug', params.slug)
-    .eq('is_published', true)
-    .maybeSingle();
-
-  if (!page) return { title: '페이지를 찾을 수 없음' };
-
-  return {
-    title: page.title,
-    description: `${page.title}의 링크 페이지`,
-    openGraph: {
-      title: page.title,
-      description: `${page.title}의 링크 페이지`,
-      type: 'profile',
-    },
-  };
-}
-
-export default async function PublicPage({ params }: { params: { slug: string } }) {
-  const supabase = createClient();
-
   const { data: page } = await supabase
     .from('pages')
     .select('*')
-    .eq('slug', params.slug)
+    .eq('slug', decodeURIComponent(slug).toLowerCase())
     .eq('is_published', true)
     .maybeSingle();
+  if (!page) return { supabase, page: null, blocks: [] as Block[] };
 
-  if (!page) notFound();
-
-  // 활성화된 블록만 가져옴
   const { data: blocks } = await supabase
     .from('blocks')
     .select('*')
@@ -47,36 +25,49 @@ export default async function PublicPage({ params }: { params: { slug: string } 
     .eq('is_active', true)
     .order('position', { ascending: true });
 
+  return { supabase, page, blocks: (blocks || []) as Block[] };
+}
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const { page, blocks } = await loadPage(params.slug);
+  if (!page) return { title: '페이지를 찾을 수 없음' };
+
+  const profile = blocks.find((b) => b.type === 'profile');
+  const title = profile?.data?.name || page.title;
+  const description = profile?.data?.bio || `${page.title}의 링크 페이지`;
+  const image = profile?.data?.avatarUrl;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'profile',
+      ...(image ? { images: [{ url: image }] } : {}),
+    },
+  };
+}
+
+export async function generateViewport({ params }: { params: { slug: string } }): Promise<Viewport> {
+  const { page } = await loadPage(params.slug);
+  return {
+    width: 'device-width',
+    initialScale: 1,
+    themeColor: page ? resolveTheme(page.theme).bgColor : '#ffffff',
+  };
+}
+
+export default async function PublicPage({ params }: { params: { slug: string } }) {
+  const { page, blocks } = await loadPage(params.slug);
+  if (!page) notFound();
+
   // 방문 기록은 클라이언트(ViewTracker)가 /api/view 로 보냄
   // → 봇 제외, referrer/UTM/디바이스 수집, 새로고침 중복 방지
-
-  const theme = page.theme || {};
-  const primaryColor = theme.primaryColor || '#f97316';
-  const bgColor = theme.bgColor || '#fafafa';
-
   return (
-    <main className="min-h-screen" style={{ backgroundColor: bgColor }}>
+    <main>
       <ViewTracker pageId={page.id} />
-      <div className="mx-auto max-w-md px-4 py-8">
-        <PublicPageClient
-          blocks={(blocks || []) as Block[]}
-          primaryColor={primaryColor}
-        />
-
-        {/* 푸터 */}
-        <div className="text-center mt-12 pt-6 border-t border-text-3/20">
-          <a
-            href="/"
-            className="inline-flex items-center gap-1 text-xs text-text-3 hover:text-primary"
-          >
-            <span>made with</span>
-            <span className="font-bold">
-              <span className="text-text-2">auto</span>
-              <span style={{ color: primaryColor }}>link</span>
-            </span>
-          </a>
-        </div>
-      </div>
+      <PageView page={page} blocks={blocks} isPublic />
     </main>
   );
 }

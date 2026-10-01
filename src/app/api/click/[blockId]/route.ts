@@ -5,7 +5,7 @@ import { appendRefParams, buildVisitMeta, isBot } from '@/lib/tracking';
 /**
  * 공개 페이지에서 링크 클릭 시 호출되는 추적 엔드포인트.
  * 1) click_events 에 기록 (유입경로·UTM·디바이스·인앱 포함) + click_count 증가
- * 2) 목적지 URL 에 ?ref=autolink&block={blockId} 를 붙여 리다이렉트
+ * 2) 목적지 URL 에 ?ref=bylink&block={blockId} 를 붙여 리다이렉트
  *
  * 쿼리:
  *   to   = 목적지 URL (필수)

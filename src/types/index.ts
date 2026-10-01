@@ -7,21 +7,77 @@ export type BlockType =
   | 'calendar'   // 달력 / D-day
   | 'email'      // 이메일 수집
   | 'text'       // 텍스트 (제목/본문/구분선)
-  | 'sns';       // SNS 링크 모음
+  | 'sns'        // SNS 링크 모음
+  | 'link_collection' // 그룹 링크 (마이그레이션 001 필요)
+  | 'video'      // 동영상 (001)
+  | 'image_banner' // 갤러리 (001)
+  | 'spacer';    // 여백 (001)
+
+/** 모든 블록 data 에 들어갈 수 있는 공통 필드 (DB 컬럼 대신 JSONB 에 저장 → 마이그레이션 없이 동작) */
+export interface BlockCommon {
+  highlight?: boolean;      // 강조(별)
+  visibleFrom?: string | null;  // 예약 공개 시작 (ISO)
+  visibleUntil?: string | null; // 예약 공개 종료 (ISO)
+}
+
+export type ProfileLayout = 'cover' | 'circle' | 'small' | 'background';
+export type TextSize = 's' | 'm' | 'l';
+export type CardSize = 's' | 'm' | 'l';
+export type CollectionLayout = 'list' | 'grid2' | 'grid3' | 'carousel1' | 'carousel2';
 
 // 각 블록 타입별 데이터 구조
 export interface ProfileData {
-  name: string;
-  bio: string;
-  avatarUrl?: string;
-  initial?: string; // 사진 없을 때 표시할 한 글자
+  name: string;          // 대표 문구
+  bio: string;           // 상세 문구
+  avatarUrl?: string;    // 프로필/커버 이미지
+  initial?: string;      // 사진 없을 때 표시할 한 글자
+  layout?: ProfileLayout; // 기본 circle
+  titleSize?: TextSize;   // 기본 m
 }
 
-export interface LinkData {
+export interface LinkData extends BlockCommon {
   title: string;
   url: string;
   thumbnail?: string;
   memo?: string; // 운영자만 보는 메모
+  cardSize?: CardSize; // 기본 s (왼쪽 정사각 썸네일)
+}
+
+export interface CollectionItem {
+  id: string;
+  title: string;
+  url: string;
+  thumbnail?: string;
+}
+
+export interface LinkCollectionData extends BlockCommon {
+  title?: string;
+  links: CollectionItem[];
+  layout?: CollectionLayout;
+  collapse?: boolean; // 접기 (처음 3개만)
+}
+
+export interface VideoData extends BlockCommon {
+  url: string;
+  title?: string;
+}
+
+export interface GalleryImage {
+  id: string;
+  url: string;
+  link?: string;
+}
+
+export interface GalleryData extends BlockCommon {
+  title?: string;
+  images: GalleryImage[];
+  layout?: 'single' | 'slide' | 'grid2';
+  ratio?: 'square' | 'wide' | 'tall';
+}
+
+export interface SpacerData extends BlockCommon {
+  size?: 's' | 'm' | 'l';
+  line?: boolean;
 }
 
 export interface Product {
@@ -61,14 +117,19 @@ export interface EmailData {
   buttonText: string;
 }
 
-export interface TextData {
+export interface TextData extends BlockCommon {
   variant: 'heading' | 'body' | 'divider';
   text?: string;
+  align?: 'left' | 'center';
 }
 
+export type SnsPlatform =
+  | 'instagram' | 'youtube' | 'threads' | 'tiktok' | 'twitter' | 'kakao' | 'blog'
+  | 'facebook' | 'phone' | 'email' | 'website';
+
 export interface SnsLink {
-  platform: 'instagram' | 'youtube' | 'threads' | 'tiktok' | 'twitter' | 'kakao' | 'blog';
-  url: string;
+  platform: SnsPlatform;
+  url: string; // URL, 아이디, 전화번호, 이메일 중 하나 (플랫폼별로 해석)
 }
 
 export interface SnsData {
@@ -91,7 +152,7 @@ export type BlockData =
 export interface Page {
   id: string;
   user_id: string;
-  slug: string; // autolink.kr/p/<slug>
+  slug: string; // link.byranmedia.com/<slug>
   title: string;
   theme: PageTheme;
   is_published: boolean;
@@ -100,11 +161,22 @@ export interface Page {
   updated_at: string;
 }
 
+export type FontKey =
+  | 'pretendard' | 'noto' | 'nanum' | 'serif'
+  | 'gowun-dodum' | 'gowun-batang' | 'ibm' | 'do-hyeon' | 'jua';
+
 export interface PageTheme {
-  primaryColor: string; // 포인트 색
+  primaryColor: string; // 버튼(강조) 색
   bgColor: string;      // 배경 색
-  font: 'pretendard' | 'noto' | 'nanum' | 'serif';
+  font: FontKey;
   buttonShape: 'rounded' | 'square' | 'pill';
+  // ---- By링크 디자인 탭 (모두 선택값, 없으면 기본) ----
+  bgImage?: string;                        // 배경 사진
+  buttonScope?: 'highlight' | 'all';       // 버튼색 부분 적용(강조만) / 전체 적용
+  buttonStyle?: 'fill' | 'outline' | 'shadow';
+  footerLogo?: 'bylink' | 'custom' | 'none';
+  footerLogoUrl?: string;
+  showSearch?: boolean;                    // 상품 검색창 (상품 그리드가 있을 때)
 }
 
 export interface Block {
@@ -157,8 +229,11 @@ export interface EmailSubmission {
 
 // 기본 테마 (페이지 생성 시 적용)
 export const DEFAULT_THEME: PageTheme = {
-  primaryColor: '#f97316',
-  bgColor: '#fafafa',
+  primaryColor: '#111111',
+  bgColor: '#f4f4f5',
   font: 'pretendard',
   buttonShape: 'rounded',
+  buttonScope: 'highlight',
+  buttonStyle: 'fill',
+  footerLogo: 'bylink',
 };

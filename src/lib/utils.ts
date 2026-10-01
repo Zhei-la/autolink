@@ -24,11 +24,20 @@ export function toSlug(input: string): string {
 }
 
 /**
- * 슬러그가 유효한지 검증 (영문 소문자/숫자/하이픈만).
+ * 슬러그(페이지 아이디)가 유효한지 검증.
+ * 영문 소문자/숫자/하이픈/밑줄/마침표, 3~30자 (리틀리 아이디 daegeon_dnc, byran.mk 그대로 옮길 수 있게).
+ * ※ 밑줄·마침표는 DB 마이그레이션 002 적용 후 저장 가능.
  */
+export const SLUG_PATTERN = '[a-z0-9_.\\-]{3,30}';
 export function isValidSlug(slug: string): boolean {
-  return /^[a-z0-9-]{3,30}$/.test(slug);
+  return /^[a-z0-9_.-]{3,30}$/.test(slug) && !/^[._-]|[._-]$/.test(slug) && !slug.includes('..');
 }
+
+/** 공개 주소 첫 칸으로 쓸 수 없는 예약어 */
+export const RESERVED_SLUGS = new Set([
+  'p', 'api', 'admin', 'login', 'logout', 'dashboard', 'edit', 'auth', 'stats', 'settings',
+  'design', 'manage', '_next', 'favicon.ico', 'robots.txt', 'sitemap.xml',
+]);
 
 /**
  * 가격 포맷 (1234567 -> "1,234,567원")

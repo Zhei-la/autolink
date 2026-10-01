@@ -1,77 +1,65 @@
 import Link from 'next/link';
+import { Logo, Wordmark } from '@/components/brand/Logo';
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-white">
-      {/* 상단 주황 라인 */}
-      <div className="h-2 bg-primary" />
+    <main className="min-h-screen bg-[#f5f0e8] text-[#111]">
+      <div className="mx-auto max-w-3xl px-6 pt-8 pb-20">
+        <header className="flex items-center justify-between">
+          <Logo size="md" />
+          <Link href="/login" className="h-10 px-4 rounded-full bg-[#111] text-white text-sm font-semibold inline-flex items-center">
+            로그인
+          </Link>
+        </header>
 
-      <div className="mx-auto max-w-3xl px-6 py-20">
-        {/* 로고 */}
-        <div className="flex items-center gap-3 mb-16">
-          <div className="w-14 h-14 rounded-xl bg-primary flex items-center justify-center">
-            <span className="text-white font-black text-3xl">A</span>
+        <section className="pt-20 md:pt-28">
+          <p className="text-[13px] font-semibold tracking-[0.2em] text-[#8a7f70]">BYRAN LINK</p>
+          <h1 className="mt-4 text-[44px] md:text-[60px] font-black leading-[1.08] tracking-tight">
+            링크 하나로
+            <br />
+            내 브랜드를
+            <br />
+            보여주세요
+          </h1>
+          <p className="mt-6 text-[17px] text-[#5b5348] leading-relaxed max-w-xl">
+            사진 한 장, 버튼 몇 개면 홈페이지 같은 프로필 링크가 완성돼요.
+            <br className="hidden md:block" />
+            누가 어디서 들어와 무엇을 눌렀는지도 한눈에 보여드려요.
+          </p>
+          <div className="mt-10 flex flex-col sm:flex-row gap-3">
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center h-14 px-8 rounded-2xl bg-[#111] text-white font-semibold"
+            >
+              무료로 시작하기
+            </Link>
+            <Link
+              href="#features"
+              className="inline-flex items-center justify-center h-14 px-8 rounded-2xl border border-[#d8cfc2] font-semibold"
+            >
+              어떤 걸 만들 수 있나요?
+            </Link>
           </div>
-          <div>
-            <div className="text-2xl font-black">
-              <span className="text-text">auto</span>
-              <span className="text-primary">link</span>
+        </section>
+
+        <section id="features" className="mt-24 grid sm:grid-cols-2 gap-3">
+          {[
+            ['커버 사진 · 썸네일 버튼', '사진이 들어간 버튼과 커버로 업종에 맞는 분위기를 만들어요.'],
+            ['그룹 링크 · 갤러리 · 동영상', '포트폴리오, 후기, 유튜브 영상을 한 페이지에 정리해요.'],
+            ['디자인 탭', '배경, 버튼 색과 모양, 한글 폰트 9종, 내 로고까지 직접 골라요.'],
+            ['분석 탭', '방문·클릭·클릭률, 유입 채널, 기기, 블록별 클릭 순위를 기간별로 봐요.'],
+          ].map(([t, d]) => (
+            <div key={t} className="rounded-3xl bg-white/70 p-6">
+              <div className="font-bold text-[17px]">{t}</div>
+              <div className="mt-2 text-[14px] text-[#5b5348] leading-relaxed">{d}</div>
             </div>
-            <div className="text-xs text-text-3">autolink.kr</div>
-          </div>
-        </div>
+          ))}
+        </section>
 
-        {/* 헤드라인 */}
-        <div className="text-sm font-bold text-primary tracking-widest mb-3">
-          AUTOMATED LINK PAGE
-        </div>
-        <h1 className="text-5xl md:text-6xl font-black leading-tight mb-6">
-          쇼츠 한 편으로<br />
-          매출 만드는 가장<br />
-          빠른 방법
-        </h1>
-        <div className="w-16 h-1 bg-primary mb-8" />
-        <p className="text-lg text-text-2 leading-relaxed mb-12 max-w-xl">
-          인스타·스레드·유튜브 댓글이 자동으로 매출로 바뀝니다.<br />
-          댓글에 키워드 → 자동 DM → 내 링크 페이지 → 구매.
-        </p>
-
-        {/* CTA */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Link
-            href="/login"
-            className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition"
-          >
-            무료로 시작하기
-          </Link>
-          <Link
-            href="#features"
-            className="inline-flex items-center justify-center px-8 py-4 border border-border text-text font-bold rounded-xl hover:bg-primary-soft transition"
-          >
-            어떤 서비스인가요?
-          </Link>
-        </div>
-
-        {/* 핵심 기능 박스 */}
-        <div className="mt-20 p-6 bg-primary-soft border border-primary border-l-4 rounded-xl">
-          <div className="text-sm font-bold text-primary mb-3">이 서비스로 할 수 있는 것</div>
-          <ul className="space-y-2 text-text">
-            <li className="flex gap-3"><span className="text-primary font-bold">✓</span>5분 만에 첫 링크 페이지 만들기</li>
-            <li className="flex gap-3"><span className="text-primary font-bold">✓</span>인스타 댓글로 DM 자동 발송 셋업</li>
-            <li className="flex gap-3"><span className="text-primary font-bold">✓</span>6가지 디자인 템플릿으로 업종별 페이지</li>
-            <li className="flex gap-3"><span className="text-primary font-bold">✓</span>자동화 통계로 매출 늘리기</li>
-          </ul>
-        </div>
-
-        {/* 푸터 */}
-        <div className="mt-32 pt-8 border-t border-border text-center text-sm text-text-3">
-          <p className="font-bold text-text">자동화하는 링크 페이지</p>
-          <p className="text-primary mt-1">AutoLink</p>
-
-<p className="text-xs text-text-3 mt-3">
-  made by <span className="font-bold text-text">Zheila</span>
-</p>
-        </div>
+        <footer className="mt-24 pt-8 border-t border-[#e2d9cc] flex items-center justify-between text-[13px] text-[#8a7f70]">
+          <Wordmark size="sm" />
+          <span>바이란미디어</span>
+        </footer>
       </div>
     </main>
   );

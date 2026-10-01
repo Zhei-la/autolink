@@ -99,7 +99,7 @@ function LinkEditor({ data, onChange }: any) {
   );
 }
 
-function ProductGridEditor({ data, onChange }: any) {
+export function ProductGridEditor({ data, onChange }: any) {
   const products = data.products || [];
 
   function addProduct() {
@@ -152,7 +152,7 @@ function ProductGridEditor({ data, onChange }: any) {
   );
 }
 
-function InquiryEditor({ data, onChange }: any) {
+export function InquiryEditor({ data, onChange }: any) {
   const options = data.options || [];
 
   function updateOption(idx: number, val: string) {
@@ -191,7 +191,7 @@ function InquiryEditor({ data, onChange }: any) {
   );
 }
 
-function CalendarEditor({ data, onChange }: any) {
+export function CalendarEditor({ data, onChange }: any) {
   const events = data.events || [];
 
   function addEvent() {
@@ -235,7 +235,7 @@ function CalendarEditor({ data, onChange }: any) {
   );
 }
 
-function EmailEditor({ data, onChange }: any) {
+export function EmailEditor({ data, onChange }: any) {
   return (
     <>
       <Input label="제목" value={data.title || ''} onChange={(e) => onChange({ ...data, title: e.target.value })} placeholder="예: 새 쇼츠 알림 받기" />

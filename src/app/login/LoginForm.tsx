@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Logo } from '@/components/brand/Logo';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -75,22 +76,14 @@ export default function LoginForm() {
 
   return (
     <main className="min-h-screen bg-white">
-      <div className="h-2 bg-primary" />
-
       <div className="mx-auto max-w-md px-6 py-12">
         {/* 로고 */}
         <Link href="/" className="inline-flex items-center gap-2 mb-12">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-white font-black text-xl">A</span>
-          </div>
-          <div className="text-xl font-black">
-            <span className="text-text">auto</span>
-            <span className="text-primary">link</span>
-          </div>
+          <Logo size="md" />
         </Link>
 
         <h1 className="text-3xl font-black mb-2">
-          {mode === 'signin' ? '다시 만나서 반가워요' : '오토링크 시작하기'}
+          {mode === 'signin' ? '다시 만나서 반가워요' : 'By링크 시작하기'}
         </h1>
         <p className="text-text-2 mb-8">
           {mode === 'signin'

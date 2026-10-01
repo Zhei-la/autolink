@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 
 /**
  * 공개 페이지에서 외부로 나가는 링크.
@@ -27,11 +27,13 @@ export function TrackedLink({
   blockId,
   url,
   className,
+  style,
   children,
 }: {
   blockId: string;
   url: string;
   className?: string;
+  style?: CSSProperties;
   children: ReactNode;
 }) {
   const [href, setHref] = useState(() => buildClickHref(blockId, url, false));
@@ -41,7 +43,7 @@ export function TrackedLink({
   }, [blockId, url]);
 
   return (
-    <a href={href} target="_blank" rel="noopener" className={className}>
+    <a href={href} target="_blank" rel="noopener" className={className} style={style}>
       {children}
     </a>
   );

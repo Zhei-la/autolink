@@ -32,16 +32,17 @@ async function assertPageOwner(pageId: string) {
 export async function addBlock(pageId: string, type: BlockType) {
   const { supabase } = await assertPageOwner(pageId);
 
-  // 마지막 position 확인
+  // 마지막 position 확인 (프로필은 항상 맨 앞)
   const { data: lastBlock } = await supabase
     .from('blocks')
     .select('position')
     .eq('page_id', pageId)
-    .order('position', { ascending: false })
+    .order('position', { ascending: type === 'profile' })
     .limit(1)
     .maybeSingle();
 
-  const nextPosition = lastBlock ? lastBlock.position + 1 : 0;
+  const nextPosition =
+    type === 'profile' ? (lastBlock ? lastBlock.position - 1 : 0) : lastBlock ? lastBlock.position + 1 : 0;
 
   // 타입별 기본 데이터
   const defaultData = getDefaultBlockData(type);
@@ -57,10 +58,30 @@ export async function addBlock(pageId: string, type: BlockType) {
     .select()
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    // blocks_type_check 위반 = 마이그레이션 001 이 아직 DB 에 적용되지 않음
+    if (error.code === '23514') {
+      throw new Error('이 블록은 DB 업데이트(마이그레이션 001) 후에 쓸 수 있어요. 운영자에게 알려주세요.');
+    }
+    throw new Error(error.message);
+  }
 
   revalidatePath(`/edit/${pageId}`);
   return newBlock;
+}
+
+/**
+ * 블록 켜기/끄기 (리틀리 ON/OFF 토글). 화면에서 바로 바꾸고 서버에 값 그대로 저장.
+ */
+export async function setBlockActive(pageId: string, blockId: string, active: boolean) {
+  const { supabase } = await assertPageOwner(pageId);
+  const { error } = await supabase
+    .from('blocks')
+    .update({ is_active: active })
+    .eq('id', blockId)
+    .eq('page_id', pageId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/edit/${pageId}`);
 }
 
 /**
@@ -204,14 +225,21 @@ export async function duplicateBlock(pageId: string, blockId: string) {
   }
 
   // 새 블록 추가 (source.position + 1 위치)
-  await supabase.from('blocks').insert({
-    page_id: pageId,
-    type: source.type,
-    position: source.position + 1,
-    data: source.data,
-  });
+  const { data: copy, error } = await supabase
+    .from('blocks')
+    .insert({
+      page_id: pageId,
+      type: source.type,
+      position: source.position + 1,
+      data: source.data,
+      is_active: source.is_active,
+    })
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
 
   revalidatePath(`/edit/${pageId}`);
+  return copy;
 }
 
 /**
@@ -239,9 +267,17 @@ export async function toggleBlockActive(pageId: string, blockId: string) {
 function getDefaultBlockData(type: BlockType): any {
   switch (type) {
     case 'profile':
-      return { name: '내 이름', bio: '한 줄 소개', initial: '?' };
+      return { name: '내 이름', bio: '한 줄 소개', initial: '?', layout: 'circle', titleSize: 'm' };
     case 'link':
-      return { title: '새 링크', url: '' };
+      return { title: '', url: '', cardSize: 's' };
+    case 'link_collection':
+      return { title: '', links: [], layout: 'list', collapse: false };
+    case 'video':
+      return { url: '', title: '' };
+    case 'image_banner':
+      return { title: '', images: [], layout: 'single', ratio: 'square' };
+    case 'spacer':
+      return { size: 'm', line: false };
     case 'product_grid':
       return { title: '추천 상품', products: [] };
     case 'inquiry':
@@ -259,7 +295,7 @@ function getDefaultBlockData(type: BlockType): any {
         buttonText: '구독',
       };
     case 'text':
-      return { variant: 'heading', text: '제목을 입력하세요' };
+      return { variant: 'heading', text: '제목을 입력하세요', align: 'center' };
     case 'sns':
       return { links: [] };
     default:

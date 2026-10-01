@@ -136,11 +136,11 @@ export function isBot(ua: string): boolean {
   return /bot|crawler|spider|crawling|facebookexternalhit|Twitterbot|Slackbot|Discordbot|kakaotalk-scrap|WhatsApp|TelegramBot|preview|HeadlessChrome|Lighthouse/i.test(ua || '');
 }
 
-/** 외부 링크에 ?ref=autolink&block=... 붙이기 (도착 페이지에서 전환 추적할 수 있게) */
+/** 외부 링크에 ?ref=bylink&block=... 붙이기 (도착 페이지에서 전환 추적할 수 있게) */
 export function appendRefParams(url: string, blockId: string): string {
   try {
     const u = new URL(url);
-    if (!u.searchParams.has('ref')) u.searchParams.set('ref', 'autolink');
+    if (!u.searchParams.has('ref')) u.searchParams.set('ref', 'bylink');
     if (!u.searchParams.has('block')) u.searchParams.set('block', blockId);
     return u.toString();
   } catch {

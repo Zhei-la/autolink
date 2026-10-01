@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from 'react';
 import { createPage } from '@/lib/db/pages';
-import { toSlug } from '@/lib/utils';
+import { SLUG_PATTERN, toSlug } from '@/lib/utils';
+import { publicUrl } from '@/lib/theme';
 
 export function NewPageForm({ remaining }: { remaining: number }) {
   const [title, setTitle] = useState('');
@@ -62,21 +63,21 @@ export function NewPageForm({ remaining }: { remaining: number }) {
           disabled={pending}
           className="w-full h-12 px-4 rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
         />
-        <p className="text-xs text-text-3 mt-1.5">예: 루피의 쇼핑, 청소마녀</p>
+        <p className="text-xs text-text-3 mt-1.5">나만 보는 이름이에요. 예: 대건 D&C, 바이란 마케팅</p>
       </div>
 
       <div>
         <label htmlFor="slug" className="block text-sm font-bold mb-2">
-          URL <span className="text-text-3 font-normal">(나중에 변경 가능)</span>
+          페이지 주소 <span className="text-text-3 font-normal">(나중에 변경 가능)</span>
         </label>
         <div className="flex items-center gap-1 px-4 h-12 border border-border rounded-xl focus-within:ring-2 focus-within:ring-primary/40 focus-within:border-primary">
-          <span className="text-text-3 text-sm">/p/</span>
+          <span className="text-text-3 text-sm whitespace-nowrap">{publicUrl('').replace(/^https?:\/\//, '') || '/p/'}</span>
           <input
             id="slug"
             name="slug"
             type="text"
-            placeholder="loopy-shop"
-            pattern="[a-z0-9\-]{3,30}"
+            placeholder="byran.mk"
+            pattern={SLUG_PATTERN}
             value={slug}
             onChange={(e) => {
               setSlugTouched(true);
@@ -86,7 +87,7 @@ export function NewPageForm({ remaining }: { remaining: number }) {
             className="flex-1 outline-none bg-transparent"
           />
         </div>
-        <p className="text-xs text-text-3 mt-1.5">영문 소문자, 숫자, 하이픈만 가능 · 비워두면 자동 생성</p>
+        <p className="text-xs text-text-3 mt-1.5">영문 소문자·숫자·하이픈(-)·밑줄(_)·마침표(.) · 비워두면 자동 생성</p>
       </div>
 
       {error && (

@@ -145,8 +145,8 @@ function ProfileView({ block, theme, ink }: { block: Block; theme: Theme; ink: s
           )}
         </div>
         {!isBg && (name || bio) && (
-          <div className="px-6 -mt-2 text-center">
-            <h1 className={`font-bold ${titleClass(d.titleSize)}`}>{name}</h1>
+          <div className="relative px-6 -mt-3 text-center">
+            <h1 className={`font-semibold ${titleClass(d.titleSize)}`}>{name}</h1>
             {bio && (
               <p className="mt-1.5 text-sm whitespace-pre-line" style={{ color: sub }}>
                 {bio}
@@ -182,7 +182,7 @@ function ProfileView({ block, theme, ink }: { block: Block; theme: Theme; ink: s
           {d.initial || name?.[0] || '?'}
         </div>
       )}
-      <h1 className={`font-bold ${titleClass(d.titleSize)}`}>{name}</h1>
+      <h1 className={`font-semibold ${titleClass(d.titleSize)}`}>{name}</h1>
       {bio && (
         <p className="mt-1.5 text-sm whitespace-pre-line" style={{ color: sub }}>
           {bio}
@@ -205,7 +205,7 @@ function BlockView({ block, theme, ink, isPublic }: { block: Block; theme: Theme
     case 'sns':
       return <SnsView block={block} ink={ink} isPublic={isPublic} />;
     case 'video':
-      return <VideoView block={block} />;
+      return <VideoView block={block} isPublic={isPublic} />;
     case 'image_banner':
       return <GalleryView block={block} ink={ink} isPublic={isPublic} />;
     case 'spacer':
@@ -258,6 +258,8 @@ function LinkView({ block, theme, isPublic }: { block: Block; theme: Theme; isPu
   const look = buttonLook(theme, !!d.highlight);
   const title = d.title || '제목 없음';
   const wide = d.highlight ? '-mx-1.5' : '';
+  // 사진이 큰 카드는 알약 모양이면 타원이 되므로 모서리만 크게
+  const boxRadius = theme.buttonShape === 'pill' ? 28 : theme.buttonShape === 'square' ? 8 : 18;
 
   if (size === 'l') {
     return (
@@ -266,7 +268,7 @@ function LinkView({ block, theme, isPublic }: { block: Block; theme: Theme; isPu
         blockId={block.id}
         url={d.url}
         className={`block relative overflow-hidden transition active:scale-[0.99] ${wide}`}
-        style={{ ...look.style, padding: 0 }}
+        style={{ ...look.style, padding: 0, borderRadius: boxRadius }}
       >
         <div className="relative aspect-square w-full">
           {d.thumbnail ? (
@@ -292,14 +294,14 @@ function LinkView({ block, theme, isPublic }: { block: Block; theme: Theme; isPu
         blockId={block.id}
         url={d.url}
         className={`block overflow-hidden transition active:scale-[0.99] ${wide}`}
-        style={{ ...look.style, padding: 0 }}
+        style={{ ...look.style, padding: 0, borderRadius: d.thumbnail ? boxRadius : look.style.borderRadius }}
       >
         {d.thumbnail && (
           <div className="relative aspect-[2/1] w-full">
             <img src={d.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover" />
           </div>
         )}
-        <div className="px-4 py-4 text-center font-semibold text-[15px] leading-snug">{title}</div>
+        <div className="px-4 py-4 text-center font-medium text-[15px] leading-snug">{title}</div>
       </Clickable>
     );
   }
@@ -327,7 +329,7 @@ function LinkView({ block, theme, isPublic }: { block: Block; theme: Theme; isPu
           }}
         />
       )}
-      <div className={`flex-1 min-w-0 text-center font-semibold text-[15px] leading-snug py-3 ${d.thumbnail ? 'pr-[54px]' : ''}`}>
+      <div className={`flex-1 min-w-0 text-center font-medium text-[15px] leading-snug py-3 ${d.thumbnail ? 'pr-[54px]' : ''}`}>
         <span className="line-clamp-2">{title}</span>
       </div>
     </Clickable>
@@ -377,7 +379,7 @@ function CollectionView({ block, theme, ink, isPublic }: { block: Block; theme: 
     return (
       <div>
         {header}
-        <div className="-mx-4 px-4 flex gap-3 overflow-x-auto snap-x snap-mandatory pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-4 px-4 scroll-px-4 flex gap-3 overflow-x-auto snap-x snap-mandatory pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {items.map((it) => (
             <Clickable
               key={it.id}
@@ -397,6 +399,7 @@ function CollectionView({ block, theme, ink, isPublic }: { block: Block; theme: 
               <div className="px-3 py-2.5 text-[13px] font-semibold leading-snug line-clamp-2">{it.title}</div>
             </Clickable>
           ))}
+          <div className="flex-shrink-0 w-px" aria-hidden />
         </div>
       </div>
     );
@@ -451,7 +454,7 @@ function CollectionView({ block, theme, ink, isPublic }: { block: Block; theme: 
             {it.thumbnail && (
               <img src={it.thumbnail} alt="" className="w-11 h-11 rounded-[10px] object-cover flex-shrink-0" />
             )}
-            <div className={`flex-1 min-w-0 text-center text-[14px] font-semibold py-2.5 ${it.thumbnail ? 'pr-11' : ''}`}>
+            <div className={`flex-1 min-w-0 text-center text-[14px] font-medium py-2.5 ${it.thumbnail ? 'pr-11' : ''}`}>
               <span className="line-clamp-2">{it.title}</span>
             </div>
           </Clickable>
@@ -518,10 +521,13 @@ export function youtubeId(url: string): string | null {
   return m ? m[1] : null;
 }
 
-function VideoView({ block }: { block: Block }) {
+function VideoView({ block, isPublic }: { block: Block; isPublic: boolean }) {
   const d = block.data || {};
   const id = youtubeId(d.url || '');
   const isShorts = /youtube\.com\/shorts\//.test(d.url || '');
+  const isFile = /\.(mp4|webm|mov)(\?|$)/i.test(d.url || '');
+  // 방문자 화면에서는 주소가 없거나 잘못된 영상 블록을 숨김
+  if (isPublic && !id && !isFile) return null;
 
   return (
     <div>

@@ -11,9 +11,19 @@ export interface ManageData {
   hasEmailBlock: boolean;
 }
 
+/** 한국 시간 'M/D HH:mm' — 서버·브라우저 결과가 같도록 직접 계산 (toLocaleString 은 환경마다 달라 화면이 깨짐) */
+function kst(at: string) {
+  const d = new Date(new Date(at).getTime() + 9 * 3600 * 1000);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate(), hh: p(d.getUTCHours()), mm: p(d.getUTCMinutes()) };
+}
 function fmt(at: string) {
-  const d = new Date(at);
-  return d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const t = kst(at);
+  return `${t.m}/${t.d} ${t.hh}:${t.mm}`;
+}
+function fmtFull(at: string) {
+  const t = kst(at);
+  return `${t.y}-${String(t.m).padStart(2, '0')}-${String(t.d).padStart(2, '0')} ${t.hh}:${t.mm}`;
 }
 
 function csv(name: string, header: string[], rows: (string | number | boolean)[][]) {
@@ -49,7 +59,7 @@ export function ManageView({ data }: { data: ManageData }) {
                     csv(
                       `bylink-${data.slug}-문의.csv`,
                       ['접수 시각', '선택 항목', '블록'],
-                      data.inquiries.map((r) => [new Date(r.at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }), r.option, r.block])
+                      data.inquiries.map((r) => [fmtFull(r.at), r.option, r.block])
                     )
                 : undefined
             }
@@ -80,7 +90,7 @@ export function ManageView({ data }: { data: ManageData }) {
                     csv(
                       `bylink-${data.slug}-고객정보.csv`,
                       ['등록 시각', '이메일', '수신 동의', '블록'],
-                      data.emails.map((r) => [new Date(r.at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }), r.email, r.consent ? '동의' : '-', r.block])
+                      data.emails.map((r) => [fmtFull(r.at), r.email, r.consent ? '동의' : '-', r.block])
                     )
                 : undefined
             }

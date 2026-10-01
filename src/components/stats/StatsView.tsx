@@ -102,7 +102,7 @@ export function StatsView({ data }: { data: StatsData }) {
         <select
           value={data.range}
           onChange={(e) => (e.target.value === 'custom' ? go('custom', customFrom, customTo) : go(e.target.value))}
-          className="h-10 pl-3 pr-8 rounded-xl border border-[#e4e4e7] bg-white text-[14px] font-semibold"
+          className="h-10 pl-3 pr-8 rounded-xl border border-[#e4e4e7] bg-white text-[14px] font-semibold w-auto flex-shrink-0"
           aria-label="기간"
         >
           {(Object.keys(RANGE_LABEL) as RangeKey[]).map((k) => (
@@ -113,12 +113,17 @@ export function StatsView({ data }: { data: StatsData }) {
         </select>
         <button
           onClick={downloadCsv}
-          className="h-10 px-3.5 rounded-xl border border-[#3b6cf6] text-[#3b6cf6] bg-white text-[14px] font-semibold inline-flex items-center gap-1.5"
+          className="h-10 px-3.5 rounded-xl border border-[#3b6cf6] text-[#3b6cf6] bg-white text-[14px] font-semibold inline-flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
         >
           <Download className="w-4 h-4" /> 다운로드
         </button>
-        <span className="ml-auto text-[12px] text-[#a1a1a6]">
-          {data.from === data.to ? data.from : `${data.from} ~ ${data.to}`}
+        <span className="ml-auto text-[11px] text-[#a1a1a6] text-right leading-tight min-w-0">
+          {data.from === data.to ? data.from : (
+            <>
+              {data.from.slice(2).replace(/-/g, '.')}
+              <br />~ {data.to.slice(2).replace(/-/g, '.')}
+            </>
+          )}
         </span>
       </div>
 
@@ -290,12 +295,12 @@ function niceMax(v: number) {
 function LineChart({ rows }: { rows: DailyRow[] }) {
   const [hover, setHover] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  const W = 520;
-  const H = 210;
-  const padL = 34;
-  const padR = 12;
-  const padT = 12;
-  const padB = 26;
+  const W = 380;
+  const H = 190;
+  const padL = 30;
+  const padR = 10;
+  const padT = 10;
+  const padB = 24;
   const iw = W - padL - padR;
   const ih = H - padT - padB;
   const max = niceMax(Math.max(1, ...rows.map((r) => Math.max(r.views, r.clicks))));
@@ -350,14 +355,14 @@ function LineChart({ rows }: { rows: DailyRow[] }) {
           {ticks.map((t) => (
             <g key={t}>
               <line x1={padL} x2={W - padR} y1={y(t)} y2={y(t)} stroke="#ececef" strokeWidth={1} />
-              <text x={padL - 6} y={y(t) + 3.5} textAnchor="end" fontSize="10" fill="#8a8985">
+              <text x={padL - 6} y={y(t) + 4} textAnchor="end" fontSize="11.5" fill="#6f6e69">
                 {Number.isInteger(t) ? t : t.toFixed(1)}
               </text>
             </g>
           ))}
           {rows.map((r, i) =>
             labelIdx.has(i) ? (
-              <text key={r.day} x={x(i)} y={H - 8} textAnchor={i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'} fontSize="10" fill="#8a8985">
+              <text key={r.day} x={x(i)} y={H - 6} textAnchor={i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'} fontSize="11.5" fill="#6f6e69">
                 {fmt(r.day)}
               </text>
             ) : null

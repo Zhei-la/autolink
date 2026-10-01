@@ -22,7 +22,7 @@ export default function HomePage() {
             보여주세요
           </h1>
           <p className="mt-6 text-[17px] text-[#5b5348] leading-relaxed max-w-xl">
-            사진 한 장, 버튼 몇 개면 홈페이지 같은 프로필 링크가 완성돼요.
+            사진 한 장, 버튼 몇 개면 홈페이지 같은 프로필 링크가 완성돼요.{" "}
             <br className="hidden md:block" />
             누가 어디서 들어와 무엇을 눌렀는지도 한눈에 보여드려요.
           </p>

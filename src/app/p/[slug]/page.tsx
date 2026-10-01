@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { PublicPageClient } from '@/components/blocks/PublicPageClient';
+import { ViewTracker } from '@/components/blocks/ViewTracker';
 import type { Block } from '@/types';
 import type { Metadata } from 'next';
 
@@ -46,8 +47,8 @@ export default async function PublicPage({ params }: { params: { slug: string } 
     .eq('is_active', true)
     .order('position', { ascending: true });
 
-  // 페이지 조회수 +1 (백그라운드)
-  await supabase.rpc('increment_page_view', { p_page_id: page.id });
+  // 방문 기록은 클라이언트(ViewTracker)가 /api/view 로 보냄
+  // → 봇 제외, referrer/UTM/디바이스 수집, 새로고침 중복 방지
 
   const theme = page.theme || {};
   const primaryColor = theme.primaryColor || '#f97316';
@@ -55,6 +56,7 @@ export default async function PublicPage({ params }: { params: { slug: string } 
 
   return (
     <main className="min-h-screen" style={{ backgroundColor: bgColor }}>
+      <ViewTracker pageId={page.id} />
       <div className="mx-auto max-w-md px-4 py-8">
         <PublicPageClient
           blocks={(blocks || []) as Block[]}

@@ -4,6 +4,7 @@ import type { Block } from '@/types';
 import { EmailSubscribe } from './EmailSubscribe';
 import { InquirySubmit } from './InquirySubmit';
 import { ProductGridSearch } from './ProductGridSearch';
+import { TrackedLink } from './TrackedLink';
 
 export function BlockPreview({
   block,
@@ -57,16 +58,11 @@ function ProfileBlock({ data, primaryColor }: any) {
 
 function LinkBlock({ block, primaryColor, isPublic }: any) {
   const { title, url, thumbnail } = block.data;
-  const Wrapper: any = isPublic ? 'a' : 'div';
-  const wrapperProps = isPublic
-    ? { href: `/api/click/${block.id}?to=${encodeURIComponent(url || '#')}`, target: '_blank', rel: 'noopener' }
-    : {};
+  const className =
+    'flex items-center gap-3 p-4 bg-white border border-border rounded-2xl hover:border-primary transition cursor-pointer';
 
-  return (
-    <Wrapper
-      {...wrapperProps}
-      className="flex items-center gap-3 p-4 bg-white border border-border rounded-2xl hover:border-primary transition cursor-pointer"
-    >
+  const inner = (
+    <>
       {thumbnail ? (
         <img src={thumbnail} alt="" className="w-14 h-14 rounded-xl object-cover" />
       ) : (
@@ -76,8 +72,17 @@ function LinkBlock({ block, primaryColor, isPublic }: any) {
         <div className="font-bold truncate">{title || '제목 없음'}</div>
         {url && <div className="text-xs text-text-3 truncate">{url.replace(/^https?:\/\//, '').slice(0, 40)}</div>}
       </div>
-    </Wrapper>
+    </>
   );
+
+  if (isPublic) {
+    return (
+      <TrackedLink blockId={block.id} url={url} className={className}>
+        {inner}
+      </TrackedLink>
+    );
+  }
+  return <div className={className}>{inner}</div>;
 }
 
 function ProductGridBlock({ block, primaryColor, isPublic }: any) {

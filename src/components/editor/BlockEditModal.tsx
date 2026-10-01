@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import type { Block } from '@/types';
 import { nanoid } from 'nanoid';
+import { useModalHistory } from '@/hooks/useModalHistory';
 
 interface Props {
   pageId: string;
@@ -18,6 +19,9 @@ export function BlockEditModal({ pageId, block, onClose }: Props) {
   const [data, setData] = useState<any>(block.data);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 모바일 뒤로가기 → 편집 페이지가 닫히는 대신 모달만 닫힘
+  useModalHistory(true, onClose);
 
   async function handleSave() {
     setSaving(true);

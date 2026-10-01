@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
+import { TrackedLink } from "./TrackedLink";
 
 export function ProductGridSearch({
   blockId,
@@ -71,21 +72,11 @@ export function ProductGridSearch({
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {filteredProducts.map((product: any) => {
-            const Wrapper: any = isPublic ? "a" : "div";
-            const wrapperProps = isPublic
-              ? {
-                  href: `/api/click/${blockId}?to=${encodeURIComponent(product.url || "#")}`,
-                  target: "_blank",
-                  rel: "noopener",
-                }
-              : {};
+            const cardClass =
+              "block bg-white border border-border rounded-xl overflow-hidden hover:border-primary transition cursor-pointer";
 
-            return (
-              <Wrapper
-                key={product.id}
-                {...wrapperProps}
-                className="bg-white border border-border rounded-xl overflow-hidden hover:border-primary transition cursor-pointer"
-              >
+            const card = (
+              <>
                 <div className="aspect-square bg-text-3/10">
                   {product.thumbnail && (
                     <img
@@ -113,7 +104,17 @@ export function ProductGridSearch({
                     </span>
                   )}
                 </div>
-              </Wrapper>
+              </>
+            );
+
+            return isPublic ? (
+              <TrackedLink key={product.id} blockId={blockId} url={product.url} className={cardClass}>
+                {card}
+              </TrackedLink>
+            ) : (
+              <div key={product.id} className={cardClass}>
+                {card}
+              </div>
             );
           })}
         </div>

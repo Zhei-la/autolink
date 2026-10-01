@@ -3,15 +3,15 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { BlockType } from '@/types';
+import { assertCanEdit } from './account';
 
 /**
- * 페이지에 블록 소유권 검증.
- * 본인 소유가 아니면 throw.
+ * 페이지에 블록 소유권 검증 + 계정 상태(active) 검증.
+ * 본인 소유가 아니거나 정지/만료 계정이면 throw.
  */
 async function assertPageOwner(pageId: string) {
+  const { user } = await assertCanEdit();
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('로그인이 필요합니다');
 
   const { data: page } = await supabase
     .from('pages')
@@ -141,6 +141,34 @@ export async function moveBlock(
   await supabase.from('blocks').update({ position: tempPos }).eq('id', current.id);
   await supabase.from('blocks').update({ position: current.position }).eq('id', neighbor.id);
   await supabase.from('blocks').update({ position: neighbor.position }).eq('id', current.id);
+
+  revalidatePath(`/edit/${pageId}`);
+}
+
+/**
+ * 드래그앤드롭 결과를 그대로 저장 — 정렬된 블록 id 배열을 받아 position 을 0..n-1 로 재부여.
+ * (한 칸씩 moveBlock 을 반복 호출하던 방식은 여러 칸 이동 시 1칸만 움직이는 버그가 있었음)
+ */
+export async function reorderBlocks(pageId: string, orderedIds: string[]) {
+  const { supabase } = await assertPageOwner(pageId);
+
+  // 페이지에 실제로 속한 블록만 허용
+  const { data: existing } = await supabase
+    .from('blocks')
+    .select('id')
+    .eq('page_id', pageId);
+  const valid = new Set((existing || []).map((b) => b.id));
+  const ids = orderedIds.filter((id) => valid.has(id));
+  if (ids.length !== valid.size) throw new Error('블록 목록이 최신이 아니에요. 새로고침 후 다시 시도해주세요.');
+
+  // 1단계: 충돌 방지를 위해 큰 오프셋으로 이동 → 2단계: 최종 position
+  const OFFSET = 100000;
+  for (let i = 0; i < ids.length; i++) {
+    await supabase.from('blocks').update({ position: OFFSET + i }).eq('id', ids[i]).eq('page_id', pageId);
+  }
+  for (let i = 0; i < ids.length; i++) {
+    await supabase.from('blocks').update({ position: i }).eq('id', ids[i]).eq('page_id', pageId);
+  }
 
   revalidatePath(`/edit/${pageId}`);
 }

@@ -115,6 +115,27 @@ export interface Block {
   data: any; // BlockData의 data 필드 (각 타입별)
   click_count: number;
   is_active: boolean;
+  visible_from?: string | null;
+  visible_until?: string | null;
+  badge_text?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type AccountStatus = 'active' | 'suspended' | 'expired';
+
+export interface Profile {
+  id: string;
+  email: string | null;
+  name: string | null;
+  avatar_url: string | null;
+  plan: 'free' | 'pro' | 'business';
+  status: AccountStatus;
+  expires_at: string | null;
+  page_limit: number;
+  is_admin: boolean;
+  last_seen_at: string | null;
+  admin_memo: string | null;
   created_at: string;
   updated_at: string;
 }

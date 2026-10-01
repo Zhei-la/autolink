@@ -1,15 +1,17 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft, ExternalLink, Copy } from 'lucide-react';
+import { ChevronLeft, ExternalLink } from 'lucide-react';
 import { BlockList } from '@/components/editor/BlockList';
+import { getMyAccount, STATUS_MESSAGE } from '@/lib/db/account';
 import type { Block } from '@/types';
 
 export default async function EditPage({ params }: { params: { pageId: string } }) {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, effectiveStatus } = await getMyAccount();
 
   if (!user) redirect('/login');
+  const readOnly = effectiveStatus !== 'active';
 
   // 페이지 정보
   const { data: page, error: pageErr } = await supabase
@@ -57,16 +59,20 @@ export default async function EditPage({ params }: { params: { pageId: string } 
 
       <div className="mx-auto max-w-2xl px-4 py-6">
         {/* 안내 박스 */}
-        <div className="mb-6 p-4 bg-primary-soft border border-primary border-l-4 rounded-xl">
-          <p className="text-sm text-text">
-            <strong>편집 모드</strong> · 블록을 추가하거나 수정하세요. 변경사항은 저장 즉시 반영돼요.
-          </p>
-        </div>
+        {!readOnly && (
+          <div className="mb-6 p-4 bg-primary-soft border border-primary border-l-4 rounded-xl">
+            <p className="text-sm text-text">
+              <strong>편집 모드</strong> · 왼쪽 손잡이를 끌어 순서를 바꾸고, 오른쪽 메뉴로 수정하세요. 변경사항은 저장 즉시 반영돼요.
+            </p>
+          </div>
+        )}
 
         <BlockList
           pageId={page.id}
           blocks={(blocks || []) as Block[]}
           primaryColor={page.theme?.primaryColor || '#f97316'}
+          readOnly={readOnly}
+          readOnlyMessage={readOnly ? STATUS_MESSAGE[effectiveStatus] : undefined}
         />
 
         {/* 페이지 설정 */}

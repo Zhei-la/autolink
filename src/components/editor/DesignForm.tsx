@@ -28,6 +28,7 @@ export function DesignForm({
   const [preview, setPreview] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef(theme);
+  const dirty = useRef(false);
   useModalHistory(preview, () => setPreview(false));
 
   const hasProducts = blocks.some((b) => b.type === 'product_grid');
@@ -39,20 +40,41 @@ export function DesignForm({
     setTheme(next);
     setState('saving');
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(async () => {
-      try {
-        await updatePage(page.id, { theme: latest.current });
-        setState('saved');
-        setError(null);
-      } catch (e: any) {
-        setState('error');
-        setError(e?.message || '저장하지 못했어요');
-      }
-    }, 600);
+    dirty.current = true;
+    timer.current = setTimeout(save, 600);
   }
 
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
+  async function save() {
+    timer.current = null;
+    const theme = latest.current;
+    try {
+      await updatePage(page.id, { theme });
+      if (latest.current === theme) dirty.current = false;
+      setState('saved');
+      setError(null);
+    } catch (e: any) {
+      setState('error');
+      setError(e?.message || '저장하지 못했어요');
+    }
+  }
+
+  // 다른 탭으로 바로 넘어가도 마지막 변경은 저장 / 창을 닫으려 하면 경고
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (dirty.current) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      if (timer.current) {
+        clearTimeout(timer.current);
+        updatePage(page.id, { theme: latest.current }).catch(() => {});
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -210,7 +232,7 @@ export function DesignForm({
         <LogoMark size={18} /> 바뀐 디자인은 바로 공개 페이지에 반영돼요
       </div>
 
-      <div className="fixed left-0 right-0 bottom-[84px] z-30 pointer-events-none">
+      <div className="fixed left-0 right-0 bottom-[calc(84px+env(safe-area-inset-bottom))] z-30 pointer-events-none">
         <div className="mx-auto max-w-[560px] px-4">
           <button
             onClick={() => setPreview(true)}

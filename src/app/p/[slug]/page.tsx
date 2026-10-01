@@ -4,7 +4,7 @@ import { PageView } from '@/components/page/PageView';
 import { ViewTracker } from '@/components/blocks/ViewTracker';
 import type { Block } from '@/types';
 import type { Metadata, Viewport } from 'next';
-import { resolveTheme } from '@/lib/theme';
+import { isScheduledVisible, resolveTheme } from '@/lib/theme';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +25,10 @@ async function loadPage(slug: string) {
     .eq('is_active', true)
     .order('position', { ascending: true });
 
-  return { supabase, page, blocks: (blocks || []) as Block[] };
+  // 예약 공개: 기간 밖의 블록은 서버에서 빼고 보냄 (페이지 소스에도 안 나오게)
+  const now = Date.now();
+  const visible = ((blocks || []) as Block[]).filter((b) => isScheduledVisible(b.data, now));
+  return { supabase, page, blocks: visible };
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {

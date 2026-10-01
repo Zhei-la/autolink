@@ -54,6 +54,8 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 export function PageEditor({ page, blocks: serverBlocks, readOnly = false, readOnlyMessage }: Props) {
   const router = useRouter();
   const [blocks, setBlocks] = useState<Block[]>(serverBlocks);
+  const blocksRef = useRef<Block[]>(serverBlocks);
+  blocksRef.current = blocks;
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [showAdd, setShowAdd] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -66,11 +68,13 @@ export function PageEditor({ page, blocks: serverBlocks, readOnly = false, readO
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   // 서버에서 새 목록이 오면 합치되, 저장 대기 중인 칸은 내가 입력한 값을 유지
+  const mergeServer = useCallback(
+    (list: Block[]) => list.map((sb) => (pending.current.has(sb.id) ? { ...sb, data: pending.current.get(sb.id) } : sb)),
+    []
+  );
   useEffect(() => {
-    setBlocks(
-      serverBlocks.map((sb) => (pending.current.has(sb.id) ? { ...sb, data: pending.current.get(sb.id) } : sb))
-    );
-  }, [serverBlocks]);
+    setBlocks(mergeServer(serverBlocks));
+  }, [serverBlocks, mergeServer]);
 
   // 저장 안 된 채로 나가려 하면 경고
   useEffect(() => {
@@ -96,26 +100,42 @@ export function PageEditor({ page, blocks: serverBlocks, readOnly = false, readO
   const profile = blocks.find((b) => b.type === 'profile');
   const others = useMemo(() => blocks.filter((b) => b.id !== profile?.id), [blocks, profile?.id]);
 
+  /** 저장 대기 중인 내용을 바로 저장. 성공(또는 저장할 게 없음)이면 true */
   const flush = useCallback(
-    async (blockId: string) => {
+    async (blockId: string): Promise<boolean> => {
+      const t = timers.current.get(blockId);
+      if (t) {
+        clearTimeout(t);
+        timers.current.delete(blockId);
+      }
       const data = pending.current.get(blockId);
-      if (data === undefined) return;
+      if (data === undefined) return true;
       setSaveState('saving');
       try {
         await updateBlockData(page.id, blockId, data);
         if (pending.current.get(blockId) === data) pending.current.delete(blockId);
         setSaveState(pending.current.size ? 'saving' : 'saved');
+        return true;
       } catch (e: any) {
         setSaveState('error');
         setError(e?.message || '저장하지 못했어요. 잠시 후 다시 시도해주세요.');
+        return false;
       }
     },
     [page.id]
   );
 
+  /**
+   * 블록 data 변경. 새 data 객체 또는 (최신 data) => 새 data 함수를 받는다.
+   * 사진 업로드처럼 시간이 걸리는 변경은 함수형으로 넘겨야, 업로드 중에 입력한 글자가 덮어써지지 않음.
+   */
   const changeData = useCallback(
-    (blockId: string, data: any) => {
+    (blockId: string, next: any) => {
       if (readOnly) return;
+      const latest = pending.current.has(blockId)
+        ? pending.current.get(blockId)
+        : blocksRef.current.find((b) => b.id === blockId)?.data;
+      const data = typeof next === 'function' ? next(latest || {}) : next;
       setBlocks((prev) => prev.map((b) => (b.id === blockId ? { ...b, data } : b)));
       pending.current.set(blockId, data);
       setSaveState('saving');
@@ -170,7 +190,7 @@ export function PageEditor({ page, blocks: serverBlocks, readOnly = false, readO
 
   async function handleDuplicate(block: Block) {
     // 저장 대기 중인 내용부터 저장한 뒤 복사
-    await flush(block.id);
+    if (!(await flush(block.id))) return;
     const copy = await guard(() => duplicateBlock(page.id, block.id));
     if (copy) {
       setBlocks((prev) => {
@@ -185,12 +205,20 @@ export function PageEditor({ page, blocks: serverBlocks, readOnly = false, readO
   async function handleDelete(block: Block) {
     setConfirmDelete(null);
     const t = timers.current.get(block.id);
-    if (t) clearTimeout(t);
+    if (t) {
+      clearTimeout(t);
+      timers.current.delete(block.id);
+    }
+    const unsaved = pending.current.get(block.id);
     pending.current.delete(block.id);
     const before = blocks;
     setBlocks((prev) => prev.filter((b) => b.id !== block.id));
     const ok = await guard(() => deleteBlock(page.id, block.id).then(() => true));
-    if (!ok) setBlocks(before);
+    if (!ok) {
+      setBlocks(before);
+      // 삭제 실패 → 저장 못 한 입력을 되살려 다시 저장
+      if (unsaved !== undefined) changeData(block.id, unsaved);
+    }
   }
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -204,7 +232,7 @@ export function PageEditor({ page, blocks: serverBlocks, readOnly = false, readO
     setBlocks(next);
     const ok = await guard(() => reorderBlocks(page.id, next.map((b) => b.id)).then(() => true));
     if (!ok) {
-      setBlocks(serverBlocks);
+      setBlocks(mergeServer(serverBlocks));
       router.refresh();
     }
   }
@@ -269,7 +297,7 @@ export function PageEditor({ page, blocks: serverBlocks, readOnly = false, readO
       </div>
 
       {/* 하단 떠 있는 버튼: 미리보기 / 블록 추가 (하단 메뉴 바로 위) */}
-      <div className="fixed left-0 right-0 bottom-[84px] z-30 pointer-events-none">
+      <div className="fixed left-0 right-0 bottom-[calc(84px+env(safe-area-inset-bottom))] z-30 pointer-events-none">
         <div className="mx-auto max-w-[560px] px-4 flex items-center justify-between">
           <button
             onClick={() => setShowPreview(true)}
@@ -417,7 +445,7 @@ function BlockCard({
             {meta.canHighlight && (
               <button
                 type="button"
-                onClick={() => onChangeData(block.id, { ...data, highlight: !data.highlight })}
+                onClick={() => onChangeData(block.id, (d: any) => ({ ...d, highlight: !d.highlight }))}
                 aria-label="강조"
                 className="w-8 h-8 flex items-center justify-center"
               >

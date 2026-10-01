@@ -164,7 +164,7 @@ function ProfileFields({ data, onChange }: FieldsProps) {
         label="이미지"
         hint={layout === 'cover' || layout === 'background' ? '가로 1200px 이상 추천' : '정사각 사진 추천'}
         value={data.avatarUrl}
-        onChange={(url) => onChange({ ...data, avatarUrl: url })}
+        onChange={(url) => onChange((d: any) => ({ ...d, avatarUrl: url }))}
         preset="cover"
         shape={layout === 'cover' || layout === 'background' ? 'wide' : 'circle'}
       />
@@ -216,10 +216,10 @@ function LinkFields({ data, onChange }: FieldsProps) {
             inputMode="url"
             className="flex-1 min-w-0 h-12 px-3.5 rounded-xl border border-[#e4e4e7] bg-white text-[15px] outline-none focus:border-[#111]"
           />
-          <ThumbButton value={data.thumbnail} onChange={(url) => onChange({ ...data, thumbnail: url })} />
+          <ThumbButton value={data.thumbnail} onChange={(url) => onChange((d: any) => ({ ...d, thumbnail: url }))} />
         </div>
         {data.url && !/^https?:\/\//i.test(data.url) && (
-          <p className="text-xs text-[#ef4444] mt-1.5">https:// 로 시작하는 주소를 넣어주세요</p>
+          <p className="text-xs text-[#a1a1a6] mt-1.5">앞에 https:// 를 자동으로 붙여서 연결해요</p>
         )}
       </div>
       <TextField
@@ -283,7 +283,16 @@ function CollectionFields({ data, onChange }: FieldsProps) {
           {links.map((l, i) => (
             <div key={l.id} className="rounded-xl border border-[#e4e4e7] bg-white p-2.5">
               <div className="flex items-start gap-2.5">
-                <ThumbButton value={l.thumbnail} onChange={(url) => update(i, { thumbnail: url })} size={56} />
+                <ThumbButton
+                  value={l.thumbnail}
+                  size={56}
+                  onChange={(url) =>
+                    onChange((d: any) => ({
+                      ...d,
+                      links: (d.links || []).map((x: any) => (x.id === l.id ? { ...x, thumbnail: url } : x)),
+                    }))
+                  }
+                />
                 <div className="flex-1 min-w-0 space-y-1.5">
                   <input
                     value={l.title || ''}
@@ -444,7 +453,12 @@ function GalleryFields({ data, onChange }: FieldsProps) {
                 value={im.url}
                 preset="gallery"
                 onChange={(url) =>
-                  url ? set(images.map((x, idx) => (idx === i ? { ...x, url } : x))) : set(images.filter((_, idx) => idx !== i))
+                  onChange((d: any) => ({
+                    ...d,
+                    images: url
+                      ? (d.images || []).map((x: any) => (x.id === im.id ? { ...x, url } : x))
+                      : (d.images || []).filter((x: any) => x.id !== im.id),
+                  }))
                 }
               />
               <div className="flex-1 min-w-0">
@@ -458,7 +472,9 @@ function GalleryFields({ data, onChange }: FieldsProps) {
               </div>
             </div>
           ))}
-          <AddImageButton onAdd={(url) => set([...images, { id: nanoid(8), url }])} />
+          <AddImageButton
+            onAdd={(url) => onChange((d: any) => ({ ...d, images: [...(d.images || []), { id: nanoid(8), url }] }))}
+          />
         </div>
       </div>
       <Segmented

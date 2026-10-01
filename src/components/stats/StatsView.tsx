@@ -92,7 +92,7 @@ export function StatsView({ data }: { data: StatsData }) {
     a.href = url;
     a.download = `bylink-${data.slug}-${data.from}_${data.to}.csv`;
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
 
   return (

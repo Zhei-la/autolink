@@ -140,6 +140,7 @@ export function isBot(ua: string): boolean {
 export function appendRefParams(url: string, blockId: string): string {
   try {
     const u = new URL(url);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return url;
     if (!u.searchParams.has('ref')) u.searchParams.set('ref', 'bylink');
     if (!u.searchParams.has('block')) u.searchParams.set('block', blockId);
     return u.toString();

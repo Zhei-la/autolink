@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { appendRefParams, buildVisitMeta, isBot } from '@/lib/tracking';
+import { normalizeUrl } from '@/lib/url';
 
 /**
  * 공개 페이지에서 링크 클릭 시 호출되는 추적 엔드포인트.
@@ -25,8 +26,9 @@ export async function GET(
 
   let safeUrl: string;
   try {
-    const parsed = new URL(target);
-    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('invalid protocol');
+    // https:// 없이 저장된 예전 링크도 열리게 정리
+    const parsed = new URL(normalizeUrl(target));
+    if (!['http:', 'https:', 'tel:', 'mailto:'].includes(parsed.protocol)) throw new Error('invalid protocol');
     safeUrl = parsed.toString();
   } catch {
     return NextResponse.json({ error: 'invalid url' }, { status: 400 });

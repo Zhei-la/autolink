@@ -8,6 +8,7 @@ import { TrackedLink } from '@/components/blocks/TrackedLink';
 import { Wordmark } from '@/components/brand/Logo';
 import { buttonLook, getFont, isScheduledVisible, readableOn, resolveTheme, withAlpha } from '@/lib/theme';
 import { snsHref, snsMeta } from './icons';
+import { normalizeUrl } from '@/lib/url';
 
 type Theme = ReturnType<typeof resolveTheme>;
 
@@ -30,9 +31,10 @@ export function PageView({ page, blocks, isPublic = false, framed = false }: Pag
   const [query, setQuery] = useState('');
 
   // 보이는 블록만: 켜져 있고(ON) 예약 공개 기간 안에 있는 것
+  // 공개 페이지는 서버에서 이미 걸러서 보냄(렌더 중 시간 비교 → 화면 불일치 방지). 미리보기만 여기서 거름
   const visible = useMemo(
-    () => blocks.filter((b) => b.is_active !== false && isScheduledVisible(b.data)),
-    [blocks]
+    () => blocks.filter((b) => b.is_active !== false && (isPublic || isScheduledVisible(b.data))),
+    [blocks, isPublic]
   );
   const profile = visible.find((b) => b.type === 'profile');
   const rest = visible.filter((b) => b.type !== 'profile');
@@ -234,9 +236,10 @@ function Clickable({
   style?: React.CSSProperties;
   children: React.ReactNode;
 }) {
-  if (isPublic && url) {
+  const href = normalizeUrl(url);
+  if (isPublic && href) {
     return (
-      <TrackedLink blockId={blockId} url={url} className={className} style={style}>
+      <TrackedLink blockId={blockId} url={href} className={className} style={style}>
         {children}
       </TrackedLink>
     );

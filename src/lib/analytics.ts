@@ -42,8 +42,9 @@ export function resolveRange(
   if (k === 'today') startDay = today;
   else if (k === 'all') startDay = firstSeen ? kstDay(firstSeen) : kstDay(now - 29 * DAY);
   else if (k === 'custom') {
-    const okF = /^\d{4}-\d{2}-\d{2}$/.test(from || '');
-    const okT = /^\d{4}-\d{2}-\d{2}$/.test(to || '');
+    const valid = (v?: string) => /^\d{4}-\d{2}-\d{2}$/.test(v || '') && Number.isFinite(kstStartOf(v as string));
+    const okF = valid(from);
+    const okT = valid(to);
     startDay = okF ? (from as string) : kstDay(now - 6 * DAY);
     endDay = okT ? (to as string) : today;
     if (startDay > endDay) [startDay, endDay] = [endDay, startDay];
@@ -52,11 +53,15 @@ export function resolveRange(
     startDay = kstDay(now - (n - 1) * DAY);
   }
 
-  // 일 목록 (최대 400일)
+  // 최대 400일 — 합계와 그래프 기간이 같도록 시작일을 당김
+  const MAX_DAYS = 400;
+  if ((kstStartOf(endDay) - kstStartOf(startDay)) / DAY >= MAX_DAYS) {
+    startDay = kstDay(kstStartOf(endDay) - (MAX_DAYS - 1) * DAY);
+  }
   const days: string[] = [];
   let cur = kstStartOf(startDay);
   const last = kstStartOf(endDay);
-  while (cur <= last && days.length < 400) {
+  while (cur <= last && days.length < MAX_DAYS) {
     days.push(kstDay(cur));
     cur += DAY;
   }

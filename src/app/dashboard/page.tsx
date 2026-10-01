@@ -73,7 +73,7 @@ export default async function DashboardPage({
 
         {effectiveStatus === 'active' && profile?.expires_at && (
           <div className="mb-6 p-3 bg-primary-soft border border-primary rounded-lg text-sm text-text">
-            이용 기간: <strong>{new Date(profile.expires_at).toLocaleDateString('ko-KR')}</strong> 까지
+            이용 기간: <strong>{new Date(profile.expires_at).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}</strong> 까지
           </div>
         )}
 
@@ -140,7 +140,7 @@ export default async function DashboardPage({
                     <div className="flex items-center gap-3 mt-2 text-xs text-text-3">
                       <span>방문 {page.view_count}회</span>
                       <span>·</span>
-                      <span>{new Date(page.updated_at).toLocaleDateString('ko-KR')} 수정</span>
+                      <span>{new Date(page.updated_at).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })} 수정</span>
                     </div>
                   </div>
 

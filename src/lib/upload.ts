@@ -20,7 +20,7 @@ const PRESETS: Record<UploadPreset, { max: number; square?: boolean }> = {
  * GIF·SVG 는 애니메이션/벡터가 깨지므로 그대로 올린다.
  */
 export async function prepareImage(file: File, preset: UploadPreset = "gallery"): Promise<Blob> {
-  if (/image\/(gif|svg\+xml)/.test(file.type)) return file;
+  if (/image\/gif/.test(file.type)) return file;
   const { max, square } = PRESETS[preset];
 
   let bitmap: ImageBitmap | HTMLImageElement;
@@ -90,6 +90,10 @@ function extFor(blob: Blob, fallbackName: string): string {
 }
 
 export async function uploadImage(file: File, preset: UploadPreset = "gallery") {
+  // SVG 는 안에 스크립트를 넣을 수 있어 공개 저장소에 올리지 않음
+  if (/svg/i.test(file.type) || /\.svg$/i.test(file.name)) {
+    throw new Error('SVG 는 올릴 수 없어요. PNG·JPG 로 올려주세요');
+  }
   if (file.size > 15 * 1024 * 1024) {
     throw new Error("15MB 이하 이미지만 올릴 수 있어요");
   }

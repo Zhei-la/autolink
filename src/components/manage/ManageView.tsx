@@ -35,7 +35,7 @@ function csv(name: string, header: string[], rows: (string | number | boolean)[]
   a.href = url;
   a.download = name;
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
 /** 관리 탭: 방문자가 남긴 문의 · 고객정보(이메일) 모아보기 */

@@ -45,11 +45,11 @@ export default async function StatsPage({
     supabase.from('blocks').select('id, type, data, position').eq('page_id', page.id).order('position'),
     // 방문 상세 (마이그레이션 001 의 page_views). 없으면 error → 클릭만으로 표시
     fetchAllRows(supabase as any, 'page_views', 'viewed_at, visitor_hash, referrer, referrer_source, device_type, inapp_app', (q) =>
-      q.eq('page_id', page.id).gte('viewed_at', startIso).lte('viewed_at', endIso).order('viewed_at')
+      q.eq('page_id', page.id).gte('viewed_at', startIso).lte('viewed_at', endIso).order('viewed_at').order('id')
     ),
     // 클릭 (기본 스키마에 있음). 001 이전 DB 에도 있는 컬럼만 고르기 위해 * 사용
     fetchAllRows(supabase as any, 'click_events', '*', (q) =>
-      q.eq('page_id', page.id).gte('created_at', startIso).lte('created_at', endIso).order('created_at')
+      q.eq('page_id', page.id).gte('created_at', startIso).lte('created_at', endIso).order('created_at').order('id')
     ),
   ]);
 

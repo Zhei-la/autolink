@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start -H ${BYLINK_HOST:-0.0.0.0}",
+    "start": "node server.js",
     "lint": "next lint"
   },
   "dependencies": {

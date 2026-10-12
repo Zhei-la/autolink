@@ -47,10 +47,11 @@ export function middleware(request: NextRequest) {
   }
 
   if (PROTECTED.some((p) => path === p || path.startsWith(p + '/')) && !request.cookies.get('bl_sess')) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    url.search = `?next=${encodeURIComponent(path + request.nextUrl.search)}`;
-    return NextResponse.redirect(url);
+    // 프록시 뒤에 있으므로 주소는 실제로 들어온 호스트 기준으로 만든다
+    const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || request.nextUrl.host;
+    const proto = request.headers.get('x-forwarded-proto') || 'https';
+    const to = new URL(`${BASE}/login?next=${encodeURIComponent(path + request.nextUrl.search)}`, `${proto}://${host}`);
+    return NextResponse.redirect(to);
   }
 
   return NextResponse.next();

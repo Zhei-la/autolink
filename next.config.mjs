@@ -12,7 +12,7 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      allowedOrigins: ['byranmedia.com', 'www.byranmedia.com', 'localhost:4999'],
+      allowedOrigins: ['byranmedia.com', 'www.byranmedia.com', 'bylink.me', 'localhost:4999'],
     },
   },
 };

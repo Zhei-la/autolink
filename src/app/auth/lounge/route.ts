@@ -25,8 +25,16 @@ export async function GET(request: Request) {
   await ensureAccount(user.id);
 
   const base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || url.origin;
-  const res = NextResponse.redirect(`${base}${process.env.NEXT_PUBLIC_BASE_PATH || ''}${next}`, { status: 302 });
+  const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
+  const target = `${base}${BASE}${next}`;
+  const owner = ownerCookieValue(user.id);
+  // 짧은 도메인(bylink.me)이 연결돼 있으면 거기에도 "주인 기기" 표시를 심고 돌아옴
+  const markHost = (process.env.BYLINK_MARK_HOST || '').trim();
+  const res = NextResponse.redirect(
+    markHost ? `https://${markHost}${BASE}/auth/mark?t=${encodeURIComponent(owner)}&next=${encodeURIComponent(target)}` : target,
+    { status: 302 }
+  );
   res.cookies.set(SESSION_COOKIE, sessionCookieValue(user.id), sessionCookieOptions);
-  res.cookies.set(OWNER_COOKIE, ownerCookieValue(user.id), ownerCookieOptions);
+  res.cookies.set(OWNER_COOKIE, owner, ownerCookieOptions);
   return res;
 }

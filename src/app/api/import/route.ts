@@ -30,7 +30,9 @@ export async function POST(request: Request) {
 
   const slug = String(body.slug || '').trim().toLowerCase();
   if (!isValidSlug(slug) || RESERVED_SLUGS.has(slug)) return NextResponse.json({ error: '주소 형식이 맞지 않아요' }, { status: 400 });
-  if (await one(`SELECT 1 FROM bl_pages WHERE slug = $1`, [slug])) {
+  // replace: true 면 내 페이지의 내용(블록·디자인)을 통째로 바꿔 끼움 (주소·방문 수는 그대로)
+  const existing = await one<{ id: string; user_id: number }>(`SELECT id, user_id FROM bl_pages WHERE slug = $1`, [slug]);
+  if (existing && !(body.replace === true && existing.user_id === user.id)) {
     return NextResponse.json({ error: '이미 사용 중인 주소예요' }, { status: 409 });
   }
   const title = String(body.title || '').slice(0, 50) || '내 링크 페이지';
@@ -87,12 +89,24 @@ export async function POST(request: Request) {
   for (const b of blocks) prepared.push({ type: b.type, data: await walk(b.data || {}), active: b.is_active !== false });
 
   const pageId = await tx(async (run) => {
-    const [page] = await run(`INSERT INTO bl_pages (user_id, slug, title, theme) VALUES ($1, $2, $3, $4) RETURNING id`, [
-      user.id,
-      slug,
-      title,
-      JSON.stringify(theme),
-    ]);
+    let page: { id: string };
+    if (existing) {
+      await run(`UPDATE bl_pages SET title = $1, theme = $2, updated_at = now() WHERE id = $3 AND user_id = $4`, [
+        title,
+        JSON.stringify(theme),
+        existing.id,
+        user.id,
+      ]);
+      await run(`DELETE FROM bl_blocks WHERE page_id = $1`, [existing.id]);
+      page = { id: existing.id };
+    } else {
+      [page] = (await run(`INSERT INTO bl_pages (user_id, slug, title, theme) VALUES ($1, $2, $3, $4) RETURNING id`, [
+        user.id,
+        slug,
+        title,
+        JSON.stringify(theme),
+      ])) as { id: string }[];
+    }
     let pos = 0;
     for (const b of prepared) {
       await run(`INSERT INTO bl_blocks (page_id, type, position, data, is_active) VALUES ($1, $2, $3, $4, $5)`, [

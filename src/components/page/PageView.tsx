@@ -122,7 +122,7 @@ function ProfileView({ block, theme, ink }: { block: Block; theme: Theme; ink: s
     const isBg = layout === 'background';
     return (
       <div className="-mx-4 mb-6">
-        <div className={`relative w-full ${isBg ? 'aspect-[4/5]' : 'aspect-[5/4]'} overflow-hidden`}>
+        <div className={`relative w-full ${coverAspect(isBg, d.coverHeight)} overflow-hidden`}>
           {img ? (
             <img src={img} alt="" className="absolute inset-0 w-full h-full object-cover" />
           ) : (
@@ -685,13 +685,13 @@ function Footer({ theme, ink }: { theme: Theme; ink: string }) {
   if (theme.footerLogo === 'none') return <div className="h-10" />;
   if (theme.footerLogo === 'custom' && theme.footerLogoUrl) {
     return (
-      <div className="mt-12 flex justify-center">
+      <div className="mt-8 flex justify-center">
         <img src={theme.footerLogoUrl} alt="" className="max-h-12 max-w-[200px] object-contain" />
       </div>
     );
   }
   return (
-    <div className="mt-12 flex justify-center">
+    <div className="mt-8 flex justify-center">
       <a href={`${process.env.NEXT_PUBLIC_LOUNGE_URL || 'https://byranmedia.com'}/bylink`} className="inline-flex items-center gap-1.5 text-[11px] opacity-60 hover:opacity-100 transition" style={{ color: ink }}>
         <span>made with</span>
         <Wordmark size="sm" />
@@ -713,4 +713,11 @@ function blockSearchText(block: any): string {
     return [d.title, ...(d.links || []).map((l: any) => l.title)].filter(Boolean).join(' ');
   }
   return [d.title, d.name, d.bio, d.text, d.description, d.buttonText, d.url].filter(Boolean).join(' ');
+}
+
+/** 큰 사진 프로필의 높이 (낮게 · 보통 · 높게) */
+function coverAspect(isBg: boolean, h?: string) {
+  if (h === 'low') return isBg ? 'aspect-[1/1]' : 'aspect-[16/9]';
+  if (h === 'high') return isBg ? 'aspect-[3/4]' : 'aspect-[1/1]';
+  return isBg ? 'aspect-[4/5]' : 'aspect-[5/4]';
 }

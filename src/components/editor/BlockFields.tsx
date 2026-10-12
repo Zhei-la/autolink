@@ -160,6 +160,18 @@ function ProfileFields({ data, onChange }: FieldsProps) {
           { value: 'background', label: '사진 바탕', icon: LayoutIcons.background },
         ]}
       />
+      {(layout === 'cover' || layout === 'background') && (
+        <Segmented
+          label="사진 높이"
+          value={data.coverHeight || 'mid'}
+          onChange={(v) => onChange({ ...data, coverHeight: v })}
+          options={[
+            { value: 'low', label: '낮게' },
+            { value: 'mid', label: '보통' },
+            { value: 'high', label: '높게' },
+          ]}
+        />
+      )}
       <ImageField
         label="프로필 사진"
         hint={layout === 'cover' || layout === 'background' ? '가로 1200px 이상 추천' : '정사각 사진 추천'}

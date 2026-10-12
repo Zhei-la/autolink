@@ -1,17 +1,28 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Eye } from 'lucide-react';
+import { Check, Eye } from 'lucide-react';
 import type { Block, PageTheme } from '@/types';
 import { updatePage } from '@/lib/db/pages';
 import { FONTS, normalizeHex, resolveTheme } from '@/lib/theme';
 import { useModalHistory } from '@/hooks/useModalHistory';
-import { PreviewSheet } from './PageEditor';
+import { PhoneFrame, PreviewSheet } from './PageEditor';
+import { PageView } from '@/components/page/PageView';
 import { FieldLabel, ImageField, Segmented, Toggle } from './ui';
-import { LogoMark, Wordmark } from '@/components/brand/Logo';
+import { Wordmark } from '@/components/brand/Logo';
 
-const BG_PRESETS = ['#f4f4f5', '#ffffff', '#f5f0e8', '#d8d2c8', '#eef4ff', '#fdf2f8', '#ecfdf5', '#111111'];
-const BUTTON_PRESETS = ['#111111', '#7c3aed', '#2563eb', '#f9a8d4', '#99f6e4', '#a7d7a9', '#fde68a', '#b08968'];
+const BG_PRESETS = ['#ffffff', '#f5f5f6', '#ffedf1', '#fff4e0', '#e9f1ff', '#e8f4ec', '#efe9ff', '#171717'];
+const BUTTON_PRESETS = ['#171717', '#fc1c49', '#ff7a1a', '#1f6feb', '#13795b', '#6b4eff', '#8a5a3c', '#ffffff'];
+
+/** By링크 스타일 세트: 한 번 누르면 바탕·버튼·글꼴이 같이 바뀜 */
+const STYLE_SETS: { key: string; name: string; theme: Partial<PageTheme> }[] = [
+  { key: 'ink', name: '먹', theme: { bgColor: '#ffffff', primaryColor: '#171717', buttonShape: 'rounded', buttonStyle: 'fill', buttonScope: 'all', font: 'pretendard' } },
+  { key: 'cherry', name: '체리', theme: { bgColor: '#ffedf1', primaryColor: '#fc1c49', buttonShape: 'pill', buttonStyle: 'fill', buttonScope: 'all', font: 'pretendard' } },
+  { key: 'night', name: '밤', theme: { bgColor: '#171717', primaryColor: '#ffffff', buttonShape: 'rounded', buttonStyle: 'outline', buttonScope: 'all', font: 'ibm' } },
+  { key: 'tangerine', name: '귤', theme: { bgColor: '#fff4e0', primaryColor: '#ff7a1a', buttonShape: 'pill', buttonStyle: 'shadow', buttonScope: 'highlight', font: 'jua' } },
+  { key: 'sea', name: '바다', theme: { bgColor: '#e9f1ff', primaryColor: '#1f6feb', buttonShape: 'square', buttonStyle: 'fill', buttonScope: 'all', font: 'noto' } },
+  { key: 'pine', name: '솔', theme: { bgColor: '#e8f4ec', primaryColor: '#13795b', buttonShape: 'rounded', buttonStyle: 'outline', buttonScope: 'all', font: 'gowun-batang' } },
+];
 
 export function DesignForm({
   page,
@@ -77,170 +88,180 @@ export function DesignForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const activeSet = STYLE_SETS.find((st) =>
+    Object.entries(st.theme).every(([k, v]) => String((theme as any)[k] ?? '').toLowerCase() === String(v).toLowerCase())
+  )?.key;
+
   return (
-    <div className={`space-y-3 ${readOnly ? 'pointer-events-none opacity-60' : ''}`}>
-      {/* 사용하는 폰트 미리 불러오기 */}
-      {FONTS.filter((f) => f.href).map((f) => (
-        // eslint-disable-next-line @next/next/no-page-custom-font
-        <link key={f.key} rel="stylesheet" href={f.href} />
-      ))}
+    <div className="lg:grid lg:grid-cols-[minmax(0,560px)_minmax(0,1fr)] lg:gap-14">
+      <div className={`min-w-0 ${readOnly ? 'pointer-events-none opacity-60' : ''}`}>
+        {/* 사용하는 폰트 미리 불러오기 */}
+        {FONTS.filter((f) => f.href).map((f) => (
+          // eslint-disable-next-line @next/next/no-page-custom-font
+          <link key={f.key} rel="stylesheet" href={f.href} />
+        ))}
 
-      <div className="flex items-center justify-end h-5 px-1 text-[11px] text-[#a1a1a6]">
-        {state === 'saving' ? '저장 중…' : state === 'saved' ? '자동 저장됨' : state === 'error' ? '저장 실패' : ''}
-      </div>
-      {error && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
+        <div className="flex items-center justify-between h-6 px-0.5">
+          <span className="text-[13px] text-[#8b8b90]">바꾸면 공개 페이지에 바로 적용돼요</span>
+          <span className={`text-[12px] font-semibold ${state === 'error' ? 'text-cherry' : 'text-[#3f3f44]'}`}>
+            {state === 'saving' ? '저장 중' : state === 'saved' ? '저장됨' : state === 'error' ? '저장 안 됨' : ''}
+          </span>
+        </div>
+        {error && <div className="mt-2 p-3 bg-cherry-soft rounded-xl text-sm text-cherry-dark">{error}</div>}
 
-      {/* 배경 */}
-      <Card title="배경">
-        <Swatches value={theme.bgColor} presets={BG_PRESETS} onPick={(c) => patch({ bgColor: c })} />
-        <div className="mt-4">
-          <ImageField
-            label="배경 사진 (선택)"
-            hint="사진 위에 버튼이 올라가요"
-            value={theme.bgImage}
-            preset="background"
-            shape="wide"
-            onChange={(url) => patch({ bgImage: url || undefined })}
-          />
-        </div>
-      </Card>
+        <Section title="스타일 세트" desc="하나 고른 다음 아래에서 세부를 바꿔도 돼요">
+          <div className="grid grid-cols-3 gap-2.5">
+            {STYLE_SETS.map((st) => (
+              <StyleSetCard key={st.key} name={st.name} theme={st.theme} on={activeSet === st.key} onClick={() => patch(st.theme)} />
+            ))}
+          </div>
+        </Section>
 
-      {/* 버튼 */}
-      <Card title="버튼색">
-        <Swatches value={theme.primaryColor} presets={BUTTON_PRESETS} onPick={(c) => patch({ primaryColor: c })} />
-        <div className="mt-4 flex items-center gap-5 text-[14px]">
-          {(
-            [
-              ['highlight', '부분 적용 (강조 버튼만)'],
-              ['all', '전체 적용'],
-            ] as const
-          ).map(([v, l]) => (
-            <label key={v} className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="buttonScope"
-                checked={(theme.buttonScope || 'highlight') === v}
-                onChange={() => patch({ buttonScope: v })}
-                className="w-4 h-4 accent-[#111]"
-              />
-              {l}
-            </label>
-          ))}
-        </div>
-      </Card>
-
-      <Card title="버튼 모양">
-        <div className="grid grid-cols-3 gap-2">
-          {(
-            [
-              ['square', '각진', 6],
-              ['rounded', '둥근', 14],
-              ['pill', '알약', 999],
-            ] as const
-          ).map(([v, l, r]) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => patch({ buttonShape: v })}
-              className={`h-16 rounded-xl border flex flex-col items-center justify-center gap-1.5 ${
-                theme.buttonShape === v ? 'border-[#111] bg-[#fafafa]' : 'border-[#e4e4e7]'
-              }`}
-            >
-              <span className="w-16 h-5 bg-[#d4d4d8]" style={{ borderRadius: r }} />
-              <span className="text-[12px]">{l}</span>
-            </button>
-          ))}
-        </div>
-        <div className="mt-3">
-          <Segmented
-            value={theme.buttonStyle || 'fill'}
-            onChange={(v) => patch({ buttonStyle: v })}
-            options={[
-              { value: 'fill', label: '채우기' },
-              { value: 'outline', label: '테두리' },
-              { value: 'shadow', label: '그림자' },
-            ]}
-          />
-        </div>
-      </Card>
-
-      {/* 폰트 */}
-      <Card title="폰트">
-        <div className="grid grid-cols-2 gap-2">
-          {FONTS.map((f) => {
-            const on = theme.font === f.key;
-            return (
-              <button
-                key={f.key}
-                type="button"
-                onClick={() => patch({ font: f.key })}
-                className={`h-[60px] rounded-xl flex flex-col items-center justify-center ${
-                  on ? 'bg-[#111] text-white' : 'bg-white border border-[#e4e4e7] text-[#111]'
-                }`}
-              >
-                <span className="text-[16px]" style={{ fontFamily: f.family }}>
-                  안녕하세요!
-                </span>
-                <span className={`text-[10px] ${on ? 'text-white/60' : 'text-[#a1a1a6]'}`}>{f.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </Card>
-
-      {/* 하단 로고 */}
-      <Card title="로고">
-        <div className="space-y-2">
-          <LogoOption
-            on={(theme.footerLogo || 'bylink') === 'bylink'}
-            onClick={() => patch({ footerLogo: 'bylink' })}
-          >
-            <span className="inline-flex items-center gap-1.5 text-[13px]">
-              made with <Wordmark size="sm" />
-            </span>
-          </LogoOption>
-          <LogoOption on={theme.footerLogo === 'custom'} onClick={() => patch({ footerLogo: 'custom' })}>
-            <span className="text-[14px] font-semibold">내 로고</span>
-          </LogoOption>
-          <LogoOption on={theme.footerLogo === 'none'} onClick={() => patch({ footerLogo: 'none' })}>
-            <span className="text-[14px]">로고 없음</span>
-          </LogoOption>
-        </div>
-        {theme.footerLogo === 'custom' && (
-          <div className="mt-4">
+        <Section title="바탕">
+          <Swatches value={theme.bgColor} presets={BG_PRESETS} onPick={(c) => patch({ bgColor: c })} />
+          <div className="mt-5">
             <ImageField
-              label="로고 이미지"
-              hint="배경이 투명한 PNG 추천"
-              value={theme.footerLogoUrl}
-              preset="logo"
-              onChange={(url) => patch({ footerLogoUrl: url || undefined })}
+              label="바탕 사진"
+              hint="선택 · 사진 위에 버튼이 올라가요"
+              value={theme.bgImage}
+              preset="background"
+              shape="wide"
+              onChange={(url) => patch({ bgImage: url || undefined })}
             />
           </div>
-        )}
-      </Card>
+        </Section>
 
-      {hasProducts && (
-        <Card title="상품 검색창">
-          <div className="flex items-center justify-between">
-            <span className="text-[14px] text-[#444]">상품 그리드 위에 검색창 보이기</span>
-            <Toggle size="sm" checked={theme.showSearch !== false} onChange={(v) => patch({ showSearch: v })} />
+        <Section title="버튼">
+          <Swatches value={theme.primaryColor} presets={BUTTON_PRESETS} onPick={(c) => patch({ primaryColor: c })} />
+          <div className="mt-5">
+            <Segmented
+              label="이 색을 쓸 버튼"
+              value={theme.buttonScope || 'highlight'}
+              onChange={(v) => patch({ buttonScope: v })}
+              options={[
+                { value: 'all', label: '모든 버튼' },
+                { value: 'highlight', label: '강조한 버튼만' },
+              ]}
+            />
           </div>
-        </Card>
-      )}
+          <div className="mt-5">
+            <FieldLabel>모서리</FieldLabel>
+            <div className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  ['square', '각지게', 6],
+                  ['rounded', '둥글게', 14],
+                  ['pill', '알약', 999],
+                ] as const
+              ).map(([v, l, r]) => {
+                const on = theme.buttonShape === v;
+                return (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => patch({ buttonShape: v })}
+                    aria-pressed={on}
+                    className={`h-[72px] rounded-[14px] border-2 flex flex-col items-center justify-center gap-2 transition bl-ring ${
+                      on ? 'border-ink bg-white' : 'border-transparent bg-mist'
+                    }`}
+                  >
+                    <span className="w-[70%] h-6" style={{ borderRadius: r, backgroundColor: on ? theme.primaryColor : '#d4d4d8' }} />
+                    <span className={`text-[12px] ${on ? 'font-bold text-ink' : 'text-[#8b8b90]'}`}>{l}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="mt-5">
+            <Segmented
+              label="질감"
+              value={theme.buttonStyle || 'fill'}
+              onChange={(v) => patch({ buttonStyle: v })}
+              options={[
+                { value: 'fill', label: '꽉 채우기' },
+                { value: 'outline', label: '선만' },
+                { value: 'shadow', label: '그림자' },
+              ]}
+            />
+          </div>
+        </Section>
 
-      <div className="flex items-center justify-center gap-2 pt-4 text-[12px] text-[#a1a1a6]">
-        <LogoMark size={18} /> 바뀐 디자인은 바로 공개 페이지에 반영돼요
+        <Section title="글꼴">
+          <div className="rounded-[16px] border border-line divide-y divide-line overflow-hidden">
+            {FONTS.map((f) => {
+              const on = theme.font === f.key;
+              return (
+                <button
+                  key={f.key}
+                  type="button"
+                  onClick={() => patch({ font: f.key })}
+                  aria-pressed={on}
+                  className={`w-full h-14 px-4 flex items-center gap-3 text-left transition ${on ? 'bg-mist' : 'bg-white hover:bg-mist/60'}`}
+                >
+                  <span className="flex-1 text-[17px] text-ink truncate" style={{ fontFamily: f.family }}>
+                    오늘도 반가워요
+                  </span>
+                  <span className={`text-[12px] ${on ? 'text-ink font-bold' : 'text-[#8b8b90]'}`}>{f.label}</span>
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center ${on ? 'bg-cherry text-white' : 'border border-line'}`}>
+                    {on && <Check className="w-3 h-3" strokeWidth={3} />}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </Section>
+
+        <Section title="맨 아래 표시">
+          <div className="grid grid-cols-3 gap-2">
+            <LogoOption on={(theme.footerLogo || 'bylink') === 'bylink'} onClick={() => patch({ footerLogo: 'bylink' })}>
+              <Wordmark size="sm" />
+            </LogoOption>
+            <LogoOption on={theme.footerLogo === 'custom'} onClick={() => patch({ footerLogo: 'custom' })}>
+              <span className="text-[13px] font-bold">내 로고</span>
+            </LogoOption>
+            <LogoOption on={theme.footerLogo === 'none'} onClick={() => patch({ footerLogo: 'none' })}>
+              <span className="text-[13px] font-bold">표시 안 함</span>
+            </LogoOption>
+          </div>
+          {theme.footerLogo === 'custom' && (
+            <div className="mt-4">
+              <ImageField
+                label="로고 이미지"
+                hint="바탕이 투명한 PNG가 잘 어울려요"
+                value={theme.footerLogoUrl}
+                preset="logo"
+                onChange={(url) => patch({ footerLogoUrl: url || undefined })}
+              />
+            </div>
+          )}
+        </Section>
+
+        {hasProducts && (
+          <Section title="상품 검색창">
+            <div className="flex items-center justify-between">
+              <span className="text-[14px] text-[#3f3f44]">상품 블록 위에 검색창 보이기</span>
+              <Toggle size="sm" checked={theme.showSearch !== false} onChange={(v) => patch({ showSearch: v })} />
+            </div>
+          </Section>
+        )}
       </div>
 
-      <div className="fixed left-0 right-0 bottom-[calc(84px+env(safe-area-inset-bottom))] z-30 pointer-events-none">
-        <div className="mx-auto max-w-[560px] px-4">
-          <button
-            onClick={() => setPreview(true)}
-            className="pointer-events-auto h-11 pl-3.5 pr-4 rounded-full bg-[#3b6cf6] text-white text-sm font-semibold shadow-lg flex items-center gap-1.5"
-          >
-            <Eye className="w-4 h-4" /> 미리보기
-          </button>
+      <aside className="hidden lg:block">
+        <div className="sticky top-[124px]">
+          <PhoneFrame height="calc(100vh - 190px)">
+            <PageView page={{ title: page.title, slug: page.slug, theme }} blocks={blocks} framed />
+          </PhoneFrame>
+          <p className="mt-3 text-center text-[12px] text-[#8b8b90]">고르는 대로 바로 바뀌어요</p>
         </div>
+      </aside>
+
+      <div className="lg:hidden fixed left-0 right-0 bottom-[calc(16px+env(safe-area-inset-bottom))] z-30 flex justify-center pointer-events-none">
+        <button
+          onClick={() => setPreview(true)}
+          className="pointer-events-auto h-12 px-5 rounded-full bg-ink text-white text-[14px] font-semibold shadow-[0_8px_24px_rgba(23,23,23,0.28)] flex items-center gap-1.5"
+        >
+          <Eye className="w-4 h-4" /> 미리보기
+        </button>
       </div>
 
       {preview && (
@@ -250,13 +271,55 @@ export function DesignForm({
   );
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
   return (
-    <section className="bg-white rounded-2xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-      <h2 className="text-[15px] font-bold mb-3">{title}</h2>
-      {children}
+    <section className="py-7 border-b border-line last:border-b-0">
+      <h2 className="text-[18px] font-extrabold text-ink tracking-tight">{title}</h2>
+      {desc && <p className="text-[13px] text-[#8b8b90] mt-1">{desc}</p>}
+      <div className="mt-4">{children}</div>
     </section>
   );
+}
+
+/** 스타일 세트 카드: 작은 휴대폰 화면처럼 바탕·버튼·글꼴을 그대로 보여줌 */
+function StyleSetCard({ name, theme, on, onClick }: { name: string; theme: Partial<PageTheme>; on: boolean; onClick: () => void }) {
+  const t = resolveTheme(theme);
+  const radius = t.buttonShape === 'pill' ? 999 : t.buttonShape === 'square' ? 3 : 7;
+  const btn = (strong: boolean): React.CSSProperties =>
+    t.buttonStyle === 'outline'
+      ? { border: `1.5px solid ${t.primaryColor}`, borderRadius: radius }
+      : {
+          backgroundColor: strong || t.buttonScope === 'all' ? t.primaryColor : '#ffffff',
+          borderRadius: radius,
+          boxShadow: t.buttonStyle === 'shadow' ? '0 3px 8px rgba(0,0,0,0.12)' : undefined,
+        };
+  const ink = t.bgColor === '#171717' ? '#ffffff' : '#171717';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      className={`relative rounded-[18px] p-1.5 border-2 transition bl-ring ${on ? 'border-ink' : 'border-transparent hover:border-line'}`}
+    >
+      <span className="block rounded-[13px] px-3 pt-3.5 pb-3 border border-black/5" style={{ backgroundColor: t.bgColor, fontFamily: getFontFamily(t.font) }}>
+        <span className="block mx-auto w-6 h-6 rounded-full" style={{ backgroundColor: ink, opacity: 0.85 }} />
+        <span className="block mt-1.5 text-[11px] font-bold text-center" style={{ color: ink }}>
+          {name}
+        </span>
+        <span className="block mt-2 h-3.5" style={btn(true)} />
+        <span className="block mt-1.5 h-3.5" style={btn(false)} />
+      </span>
+      {on && (
+        <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-cherry text-white flex items-center justify-center ring-2 ring-white">
+          <Check className="w-3 h-3" strokeWidth={3} />
+        </span>
+      )}
+    </button>
+  );
+}
+
+function getFontFamily(key?: string) {
+  return (FONTS.find((f) => f.key === key) || FONTS[0]).family;
 }
 
 function Swatches({ value, presets, onPick }: { value: string; presets: string[]; onPick: (c: string) => void }) {
@@ -265,25 +328,25 @@ function Swatches({ value, presets, onPick }: { value: string; presets: string[]
   const isCustom = !presets.includes((value || '').toLowerCase());
   return (
     <div>
-      <div className="grid grid-cols-8 gap-2">
+      <div className="flex flex-wrap gap-2.5">
         {presets.map((c) => (
           <button
             key={c}
             type="button"
             onClick={() => onPick(c)}
             aria-label={c}
-            className={`aspect-square rounded-xl border transition ${
-              value?.toLowerCase() === c ? 'ring-2 ring-offset-2 ring-[#3b6cf6] border-transparent' : 'border-[#e4e4e7]'
+            className={`w-10 h-10 rounded-full border transition bl-ring ${
+              value?.toLowerCase() === c ? 'ring-2 ring-offset-2 ring-ink border-transparent' : 'border-black/10 hover:scale-105'
             }`}
             style={{ backgroundColor: c }}
           />
         ))}
       </div>
       <div className="mt-3 flex items-center gap-2">
-        <FieldLabel>직접 고르기</FieldLabel>
+        <span className="text-[13px] font-semibold text-[#3f3f44]">직접 고르기</span>
         <label
-          className={`relative w-9 h-9 rounded-xl border overflow-hidden cursor-pointer ${
-            isCustom ? 'ring-2 ring-offset-2 ring-[#3b6cf6] border-transparent' : 'border-[#e4e4e7]'
+          className={`relative w-9 h-9 rounded-full border overflow-hidden cursor-pointer ${
+            isCustom ? 'ring-2 ring-offset-2 ring-ink border-transparent' : 'border-black/10'
           }`}
           style={{ backgroundColor: value }}
         >
@@ -301,7 +364,7 @@ function Swatches({ value, presets, onPick }: { value: string; presets: string[]
             const n = normalizeHex(e.target.value);
             if (n) onPick(n);
           }}
-          className="w-28 h-9 px-2.5 rounded-lg border border-[#e4e4e7] text-[13px] font-mono uppercase"
+          className="w-28 h-9 px-3 rounded-full bg-mist text-[13px] tabular-nums uppercase outline-none focus:bg-white focus:ring-2 focus:ring-ink"
           maxLength={7}
         />
       </div>
@@ -314,8 +377,9 @@ function LogoOption({ on, onClick, children }: { on: boolean; onClick: () => voi
     <button
       type="button"
       onClick={onClick}
-      className={`w-full h-12 rounded-xl flex items-center justify-center transition ${
-        on ? 'bg-[#111] text-white' : 'bg-white border border-[#e4e4e7] text-[#9a9aa0]'
+      aria-pressed={on}
+      className={`h-14 rounded-[14px] border-2 flex items-center justify-center transition bl-ring ${
+        on ? 'border-ink bg-white text-ink' : 'border-transparent bg-mist text-[#8b8b90]'
       }`}
     >
       {children}

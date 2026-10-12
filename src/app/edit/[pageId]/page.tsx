@@ -18,7 +18,7 @@ export default async function EditPage({ params }: { params: { pageId: string } 
   const blocks = await getBlocks(page.id);
 
   return (
-    <main className="mx-auto max-w-[560px] px-4 pt-1">
+    <main className="mx-auto max-w-[1080px] px-4 pt-5">
       <PageEditor
         page={{ id: page.id, slug: page.slug, title: page.title, theme: resolveTheme(page.theme) as any }}
         blocks={(blocks || []) as Block[]}

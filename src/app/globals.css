@@ -20,3 +20,16 @@ html, body {
     font-size: 16px !important;
   }
 }
+
+/* By링크 편집 화면 공통 */
+.bl-panel {
+  background: #ffffff;
+  border: 1px solid #e6e6e8;
+  border-radius: 16px;
+}
+.bl-focus:focus-visible,
+.bl-ring:focus-visible {
+  outline: 2px solid #fc1c49;
+  outline-offset: 2px;
+}
+::selection { background: #ffd3dc; }

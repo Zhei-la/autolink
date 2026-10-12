@@ -44,13 +44,13 @@ export function ManageView({ data }: { data: ManageData }) {
 
   return (
     <div className="space-y-3">
-      <div className="bg-white rounded-2xl p-1.5 grid grid-cols-2 gap-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+      <div className="bg-mist rounded-2xl p-1 grid grid-cols-2 gap-1">
         <TabBtn on={tab === 'inquiry'} onClick={() => setTab('inquiry')} Icon={MessageSquareText} label="문의" count={data.inquiries.length} />
         <TabBtn on={tab === 'email'} onClick={() => setTab('email')} Icon={Mail} label="고객정보" count={data.emails.length} />
       </div>
 
       {tab === 'inquiry' ? (
-        <section className="bg-white rounded-2xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+        <section className="bl-panel p-4">
           <Head
             title="문의 접수"
             onDownload={
@@ -81,7 +81,7 @@ export function ManageView({ data }: { data: ManageData }) {
           )}
         </section>
       ) : (
-        <section className="bg-white rounded-2xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+        <section className="bl-panel p-4">
           <Head
             title="고객정보 (이메일)"
             onDownload={
@@ -117,9 +117,9 @@ function TabBtn({ on, onClick, Icon, label, count }: { on: boolean; onClick: () 
   return (
     <button
       onClick={onClick}
-      className={`h-11 rounded-xl text-[14px] font-semibold inline-flex items-center justify-center gap-1.5 ${on ? 'bg-[#111] text-white' : 'text-[#71717a]'}`}
+      className={`h-11 rounded-xl text-[14px] font-semibold inline-flex items-center justify-center gap-1.5 ${on ? 'bg-white text-ink shadow-[0_1px_3px_rgba(23,23,23,0.12)]' : 'text-[#71717a]'}`}
     >
-      <Icon className="w-4 h-4" /> {label} <span className={on ? 'text-white/70' : 'text-[#a1a1a6]'}>{count}건</span>
+      <Icon className="w-4 h-4" /> {label} <span className={on ? 'text-cherry' : 'text-[#a1a1a6]'}>{count}건</span>
     </button>
   );
 }
@@ -129,7 +129,7 @@ function Head({ title, onDownload }: { title: string; onDownload?: () => void })
     <div className="flex items-center justify-between mb-2">
       <h2 className="text-[15px] font-bold">{title}</h2>
       {onDownload && (
-        <button onClick={onDownload} className="h-9 px-3 rounded-lg border border-[#3b6cf6] text-[#3b6cf6] text-[13px] font-semibold inline-flex items-center gap-1">
+        <button onClick={onDownload} className="h-9 px-3 rounded-lg border border-ink text-ink text-[13px] font-semibold inline-flex items-center gap-1">
           <Download className="w-3.5 h-3.5" /> CSV
         </button>
       )}

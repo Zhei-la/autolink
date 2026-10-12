@@ -132,7 +132,7 @@ export default async function StatsPage({
   };
 
   return (
-    <main className="mx-auto max-w-[560px] px-4 pt-1">
+    <main className="mx-auto max-w-[640px] px-4 pt-5">
       <StatsView data={data} />
     </main>
   );

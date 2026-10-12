@@ -21,7 +21,16 @@ const config: Config = {
           3: '#9b9da3',
         },
         border: {
-          DEFAULT: '#e5e5e7',
+          DEFAULT: '#e6e6e8',
+        },
+        // By링크 고유 톤: 먹색 + 체리(바이란미디어 포인트 레드)
+        ink: '#171717',
+        mist: '#f5f5f6',
+        line: '#e6e6e8',
+        cherry: {
+          DEFAULT: '#fc1c49',
+          soft: '#ffedf1',
+          dark: '#d90f39',
         },
       },
       fontFamily: {

@@ -149,19 +149,19 @@ function ProfileFields({ data, onChange }: FieldsProps) {
   return (
     <div className="space-y-5">
       <LayoutPicker
-        label="레이아웃"
+        label="프로필 모양"
         value={layout}
         columns={4}
         onChange={(v) => onChange({ ...data, layout: v })}
         options={[
-          { value: 'cover', label: '커버', icon: LayoutIcons.cover },
-          { value: 'circle', label: '원형', icon: LayoutIcons.circle },
-          { value: 'small', label: '작은 원형', icon: LayoutIcons.small },
-          { value: 'background', label: '배경', icon: LayoutIcons.background },
+          { value: 'cover', label: '와이드', icon: LayoutIcons.cover },
+          { value: 'circle', label: '동그라미', icon: LayoutIcons.circle },
+          { value: 'small', label: '한 줄', icon: LayoutIcons.small },
+          { value: 'background', label: '사진 바탕', icon: LayoutIcons.background },
         ]}
       />
       <ImageField
-        label="이미지"
+        label="프로필 사진"
         hint={layout === 'cover' || layout === 'background' ? '가로 1200px 이상 추천' : '정사각 사진 추천'}
         value={data.avatarUrl}
         onChange={(url) => onChange((d: any) => ({ ...d, avatarUrl: url }))}
@@ -169,28 +169,28 @@ function ProfileFields({ data, onChange }: FieldsProps) {
         shape={layout === 'cover' || layout === 'background' ? 'wide' : 'circle'}
       />
       <TextField
-        label="대표 문구"
+        label="이름"
         value={data.name || ''}
         onChange={(v) => onChange({ ...data, name: v })}
         maxLength={40}
-        placeholder="예: 인테리어 전문 | DAEGEON D&C"
+        placeholder="예: 바이란미디어"
       />
       <TextArea
-        label="상세 문구"
+        label="한 줄 소개"
         value={data.bio || ''}
         onChange={(v) => onChange({ ...data, bio: v })}
         maxLength={120}
         rows={2}
-        placeholder="추가 설명을 남길 수 있어요"
+        placeholder="어떤 일을 하는지 짧게 적어 주세요"
       />
       <Segmented
-        label="글자 크기"
+        label="이름 크기"
         value={data.titleSize || 'm'}
         onChange={(v) => onChange({ ...data, titleSize: v })}
         options={[
-          { value: 's', label: '소' },
-          { value: 'm', label: '중' },
-          { value: 'l', label: '대' },
+          { value: 's', label: '작게' },
+          { value: 'm', label: '보통' },
+          { value: 'l', label: '크게' },
         ]}
       />
     </div>
@@ -205,45 +205,48 @@ function LinkFields({ data, onChange }: FieldsProps) {
   return (
     <div className="space-y-5">
       <div>
-        <FieldLabel>
-          연결 URL<span className="text-[#ef4444]">*</span>
-        </FieldLabel>
-        <div className="flex items-center gap-3">
-          <input
-            value={data.url || ''}
-            onChange={(e) => onChange({ ...data, url: e.target.value })}
-            placeholder="https://"
-            inputMode="url"
-            className="flex-1 min-w-0 h-12 px-3.5 rounded-xl border border-[#e4e4e7] bg-white text-[15px] outline-none focus:border-[#111]"
-          />
+        <FieldLabel hint="사진은 선택">버튼 글자</FieldLabel>
+        <div className="flex items-center gap-2.5">
           <ThumbButton value={data.thumbnail} onChange={(url) => onChange((d: any) => ({ ...d, thumbnail: url }))} />
+          <input
+            value={data.title || ''}
+            onChange={(e) => onChange({ ...data, title: e.target.value })}
+            maxLength={50}
+            placeholder="예: 상담 신청하기"
+            className="flex-1 min-w-0 h-12 px-3.5 rounded-[12px] text-[15px] bg-mist border border-transparent outline-none focus:bg-white focus:border-ink focus:shadow-[0_0_0_3px_#ffedf1] transition"
+          />
         </div>
-        {data.url && !/^https?:\/\//i.test(data.url) && (
-          <p className="text-xs text-[#a1a1a6] mt-1.5">앞에 https:// 를 자동으로 붙여서 연결해요</p>
+      </div>
+      <div>
+        <FieldLabel>
+          누르면 갈 주소<span className="ml-0.5 text-cherry">*</span>
+        </FieldLabel>
+        <input
+          value={data.url || ''}
+          onChange={(e) => onChange({ ...data, url: e.target.value })}
+          placeholder="byranmedia.com 처럼 입력"
+          inputMode="url"
+          className="w-full h-12 px-3.5 rounded-[12px] text-[15px] bg-mist border border-transparent outline-none focus:bg-white focus:border-ink focus:shadow-[0_0_0_3px_#ffedf1] transition"
+        />
+        {data.url && !/^(https?:|tel:|mailto:)/i.test(data.url) && (
+          <p className="text-xs text-[#8b8b90] mt-1.5">https:// 는 안 써도 자동으로 붙어요</p>
         )}
       </div>
-      <TextField
-        label="대표 문구"
-        value={data.title || ''}
-        onChange={(v) => onChange({ ...data, title: v })}
-        maxLength={50}
-        placeholder="예: 상담 문의하기"
-      />
       <LayoutPicker
-        label="레이아웃"
+        label="버튼 모양"
         value={data.cardSize || 's'}
         onChange={(v) => onChange({ ...data, cardSize: v })}
         options={[
-          { value: 's', label: '작은 카드', icon: LayoutIcons.cardS },
-          { value: 'm', label: '중간 카드', icon: LayoutIcons.cardM },
-          { value: 'l', label: '큰 카드', icon: LayoutIcons.cardL },
+          { value: 's', label: '한 줄', icon: LayoutIcons.cardS },
+          { value: 'm', label: '사진 카드', icon: LayoutIcons.cardM },
+          { value: 'l', label: '큰 사진', icon: LayoutIcons.cardL },
         ]}
       />
       <TextField
-        label="메모 (나만 보기)"
+        label="나만 보는 메모"
         value={data.memo || ''}
         onChange={(v) => onChange({ ...data, memo: v })}
-        placeholder="할인 코드 등"
+        placeholder="예: 10월 할인 코드 BYRAN10"
       />
     </div>
   );
@@ -268,20 +271,20 @@ function CollectionFields({ data, onChange }: FieldsProps) {
   return (
     <div className="space-y-5">
       <TextField
-        label="대표 문구"
+        label="묶음 제목"
         value={data.title || ''}
         onChange={(v) => onChange({ ...data, title: v })}
-        placeholder="그룹 링크 상단에 문구가 노출됩니다"
+        placeholder="버튼 묶음 위에 보이는 제목 (선택)"
         maxLength={40}
       />
 
       <div>
         <FieldLabel hint={`${links.length}개`}>
-          링크 목록<span className="text-[#ef4444]">*</span>
+          버튼 목록<span className="text-cherry">*</span>
         </FieldLabel>
         <div className="space-y-2.5">
           {links.map((l, i) => (
-            <div key={l.id} className="rounded-xl border border-[#e4e4e7] bg-white p-2.5">
+            <div key={l.id} className="rounded-[14px] border border-line bg-white p-2.5">
               <div className="flex items-start gap-2.5">
                 <ThumbButton
                   value={l.thumbnail}
@@ -298,14 +301,14 @@ function CollectionFields({ data, onChange }: FieldsProps) {
                     value={l.title || ''}
                     onChange={(e) => update(i, { title: e.target.value })}
                     placeholder="제목"
-                    className="w-full h-9 px-2.5 rounded-lg border border-[#ececef] text-[14px] outline-none focus:border-[#111]"
+                    className="w-full h-9 px-2.5 rounded-[10px] text-[14px] bg-mist border border-transparent outline-none focus:bg-white focus:border-ink focus:shadow-[0_0_0_3px_#ffedf1] transition"
                   />
                   <input
                     value={l.url || ''}
                     onChange={(e) => update(i, { url: e.target.value })}
                     placeholder="https://"
                     inputMode="url"
-                    className="w-full h-9 px-2.5 rounded-lg border border-[#ececef] text-[13px] outline-none focus:border-[#111]"
+                    className="w-full h-9 px-2.5 rounded-[10px] text-[13px] bg-mist border border-transparent outline-none focus:bg-white focus:border-ink focus:shadow-[0_0_0_3px_#ffedf1] transition"
                   />
                 </div>
                 <div className="flex flex-col items-center gap-0.5">
@@ -315,7 +318,7 @@ function CollectionFields({ data, onChange }: FieldsProps) {
                   <button type="button" onClick={() => move(i, 1)} disabled={i === links.length - 1} className="p-1 text-[#a1a1a6] disabled:opacity-30" aria-label="아래로">
                     <ArrowDown className="w-4 h-4" />
                   </button>
-                  <button type="button" onClick={() => set(links.filter((_, idx) => idx !== i))} className="p-1 text-[#ef4444]" aria-label="삭제">
+                  <button type="button" onClick={() => set(links.filter((_, idx) => idx !== i))} className="p-1 text-cherry" aria-label="삭제">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -326,33 +329,33 @@ function CollectionFields({ data, onChange }: FieldsProps) {
         <button
           type="button"
           onClick={() => set([...links, { id: nanoid(8), title: '', url: '' }])}
-          className="mt-2.5 mx-auto flex items-center justify-center gap-1 h-11 px-8 rounded-xl bg-[#111] text-white text-sm font-semibold"
+          className="mt-2.5 mx-auto flex items-center justify-center gap-1 h-11 px-8 rounded-full border-2 border-dashed border-line text-ink text-sm font-semibold hover:border-ink transition"
         >
           <Plus className="w-4 h-4" /> 링크 추가
         </button>
       </div>
 
       <LayoutPicker
-        label="레이아웃"
+        label="보여주는 방식"
         value={data.layout || 'list'}
         onChange={(v) => onChange({ ...data, layout: v })}
         options={[
-          { value: 'list', label: '기본 배치', icon: LayoutIcons.list },
-          { value: 'grid2', label: '2열 배치', icon: LayoutIcons.grid2 },
-          { value: 'grid3', label: '3열 배치', icon: LayoutIcons.grid3 },
-          { value: 'carousel1', label: '1 캐러셀', icon: LayoutIcons.carousel1 },
-          { value: 'carousel2', label: '2 캐러셀', icon: LayoutIcons.carousel2 },
+          { value: 'list', label: '목록', icon: LayoutIcons.list },
+          { value: 'grid2', label: '2칸', icon: LayoutIcons.grid2 },
+          { value: 'grid3', label: '3칸', icon: LayoutIcons.grid3 },
+          { value: 'carousel1', label: '크게 넘기기', icon: LayoutIcons.carousel1 },
+          { value: 'carousel2', label: '작게 넘기기', icon: LayoutIcons.carousel2 },
         ]}
       />
 
       {!(data.layout || 'list').startsWith('carousel') && (
         <Segmented
-          label="링크 나열"
+          label="버튼이 많을 때"
           value={data.collapse ? 'fold' : 'all'}
           onChange={(v) => onChange({ ...data, collapse: v === 'fold' })}
           options={[
-            { value: 'all', label: '전부 나열' },
-            { value: 'fold', label: '접기 적용' },
+            { value: 'all', label: '모두 보이기' },
+            { value: 'fold', label: '더보기로 접기' },
           ]}
         />
       )}
@@ -382,7 +385,7 @@ function SnsFields({ data, onChange }: FieldsProps) {
               <select
                 value={l.platform}
                 onChange={(e) => set(links.map((x, idx) => (idx === i ? { ...x, platform: e.target.value } : x)))}
-                className="appearance-none w-12 h-12 rounded-xl border border-[#e4e4e7] bg-white text-transparent cursor-pointer"
+                className="appearance-none w-12 h-12 rounded-[12px] bg-mist text-transparent cursor-pointer"
                 aria-label="채널 종류"
               >
                 {SNS_PLATFORMS.map((p) => (
@@ -398,7 +401,7 @@ function SnsFields({ data, onChange }: FieldsProps) {
               onChange={(e) => set(links.map((x, idx) => (idx === i ? { ...x, url: e.target.value } : x)))}
               placeholder={`${meta.label} ${meta.placeholder}`}
               inputMode={l.platform === 'phone' ? 'tel' : l.platform === 'email' ? 'email' : 'url'}
-              className="flex-1 min-w-0 h-12 px-3.5 rounded-xl border border-[#e4e4e7] bg-white text-[15px] outline-none focus:border-[#111]"
+              className="flex-1 min-w-0 h-12 px-3.5 rounded-[12px] text-[15px] bg-mist border border-transparent outline-none focus:bg-white focus:border-ink focus:shadow-[0_0_0_3px_#ffedf1] transition"
             />
             <button type="button" onClick={() => set(links.filter((_, idx) => idx !== i))} className="p-2 text-[#71717a]" aria-label="삭제">
               <Trash2 className="w-4 h-4" />
@@ -409,7 +412,7 @@ function SnsFields({ data, onChange }: FieldsProps) {
       <button
         type="button"
         onClick={() => set([...links, { platform: nextPlatform, url: '' }])}
-        className="mt-1 mx-auto flex items-center justify-center gap-1 h-11 px-8 rounded-xl bg-[#111] text-white text-sm font-semibold"
+        className="mt-1 mx-auto flex items-center justify-center gap-1 h-11 px-8 rounded-full border-2 border-dashed border-line text-ink text-sm font-semibold hover:border-ink transition"
       >
         <Plus className="w-4 h-4" /> SNS 연결 추가
       </button>
@@ -467,7 +470,7 @@ function GalleryFields({ data, onChange }: FieldsProps) {
                   value={im.link || ''}
                   onChange={(e) => set(images.map((x, idx) => (idx === i ? { ...x, link: e.target.value } : x)))}
                   placeholder="https://"
-                  className="w-full h-10 px-3 rounded-lg border border-[#e4e4e7] text-[14px] outline-none focus:border-[#111]"
+                  className="w-full h-10 px-3 rounded-[10px] text-[14px] bg-mist border border-transparent outline-none focus:bg-white focus:border-ink focus:shadow-[0_0_0_3px_#ffedf1] transition"
                 />
               </div>
             </div>
@@ -478,13 +481,13 @@ function GalleryFields({ data, onChange }: FieldsProps) {
         </div>
       </div>
       <Segmented
-        label="배치"
+        label="보여주는 방식"
         value={data.layout || 'single'}
         onChange={(v) => onChange({ ...data, layout: v })}
         options={[
-          { value: 'single', label: '한 장씩' },
-          { value: 'slide', label: '슬라이드' },
-          { value: 'grid2', label: '2열' },
+          { value: 'single', label: '세로로' },
+          { value: 'slide', label: '옆으로 넘기기' },
+          { value: 'grid2', label: '2칸' },
         ]}
       />
       {(data.layout || 'single') !== 'grid2' && (

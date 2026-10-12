@@ -22,7 +22,7 @@ export default async function ManagePage({ params }: { params: { pageId: string 
   const nameOf = new Map((blocks || []).map((b: any) => [b.id, b.data?.title || (b.type === 'email' ? '고객정보' : '문의')]));
 
   return (
-    <main className="mx-auto max-w-[560px] px-4 pt-1">
+    <main className="mx-auto max-w-[640px] px-4 pt-5">
       <ManageView
         data={{
           slug: page.slug,

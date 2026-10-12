@@ -229,8 +229,8 @@ export interface EmailSubmission {
 
 // 기본 테마 (페이지 생성 시 적용)
 export const DEFAULT_THEME: PageTheme = {
-  primaryColor: '#111111',
-  bgColor: '#f4f4f5',
+  primaryColor: '#171717',
+  bgColor: '#ffffff',
   font: 'pretendard',
   buttonShape: 'rounded',
   buttonScope: 'highlight',

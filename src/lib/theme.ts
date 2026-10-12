@@ -141,7 +141,7 @@ export function buttonLook(theme: ReturnType<typeof resolveTheme>, highlight: bo
     style: {
       backgroundColor: base,
       color: text,
-      border: colored ? `1px solid ${base}` : '1px solid rgba(0,0,0,0.06)',
+      border: colored ? `1px solid ${base}` : '1px solid rgba(23,23,23,0.12)',
       borderRadius: radius,
       boxShadow:
         theme.buttonStyle === 'shadow'

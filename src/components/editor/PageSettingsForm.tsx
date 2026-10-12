@@ -58,7 +58,7 @@ export function PageSettingsForm({ page }: Props) {
 
   return (
     <form onSubmit={handleSave} className="space-y-3">
-      <section className="bg-white rounded-2xl p-4 space-y-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+      <section className="bl-panel p-4 space-y-4">
         <h2 className="text-[15px] font-bold">기본 정보</h2>
         <TextField label="페이지 이름 (나만 보는 이름)" value={title} onChange={setTitle} maxLength={50} required />
         <div>
@@ -79,7 +79,7 @@ export function PageSettingsForm({ page }: Props) {
         </div>
       </section>
 
-      <section className="bg-white rounded-2xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+      <section className="bl-panel p-4">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-[15px] font-bold">페이지 공개</div>

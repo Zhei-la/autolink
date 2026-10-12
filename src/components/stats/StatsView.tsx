@@ -6,8 +6,8 @@ import { Download, Eye, MousePointerClick, Percent, Search, Users } from 'lucide
 import { RANGE_LABEL, type RangeKey } from '@/lib/analytics';
 
 // 차트 색: 기본 팔레트 1·2번 슬롯 (색약 검증된 순서)
-const C_VIEWS = '#2a78d6';
-const C_CLICKS = '#eb6834';
+const C_VIEWS = '#171717';
+const C_CLICKS = '#fc1c49';
 
 export interface DailyRow {
   day: string; // YYYY-MM-DD (KST)
@@ -113,7 +113,7 @@ export function StatsView({ data }: { data: StatsData }) {
         </select>
         <button
           onClick={downloadCsv}
-          className="h-10 px-3.5 rounded-xl border border-[#3b6cf6] text-[#3b6cf6] bg-white text-[14px] font-semibold inline-flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
+          className="h-10 px-3.5 rounded-xl border border-ink text-ink bg-white text-[14px] font-semibold inline-flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
         >
           <Download className="w-4 h-4" /> 다운로드
         </button>
@@ -128,7 +128,7 @@ export function StatsView({ data }: { data: StatsData }) {
       </div>
 
       {data.range === 'custom' && (
-        <div className="flex items-center gap-2 bg-white rounded-2xl p-3">
+        <div className="flex items-center gap-2 bl-panel p-3">
           <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className="flex-1 h-10 px-2 rounded-lg border border-[#e4e4e7] text-[13px]" />
           <span className="text-[#a1a1a6]">~</span>
           <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="flex-1 h-10 px-2 rounded-lg border border-[#e4e4e7] text-[13px]" />
@@ -145,20 +145,20 @@ export function StatsView({ data }: { data: StatsData }) {
       )}
 
       {/* 요약 */}
-      <div className="rounded-2xl bg-[#111] text-white grid grid-cols-4 divide-x divide-white/15 py-3.5">
-        <Kpi Icon={Eye} label="페이지뷰" value={`${data.views.toLocaleString()}회`} />
-        <Kpi Icon={Users} label="순방문자" value={`${data.visitors.toLocaleString()}명`} />
-        <Kpi Icon={MousePointerClick} label="클릭수" value={`${data.clicks.toLocaleString()}회`} />
+      <div className="rounded-2xl bg-mist text-ink grid grid-cols-4 divide-x divide-line py-4">
+        <Kpi Icon={Eye} label="방문" value={`${data.views.toLocaleString()}회`} />
+        <Kpi Icon={Users} label="방문자" value={`${data.visitors.toLocaleString()}명`} />
+        <Kpi Icon={MousePointerClick} label="클릭" value={`${data.clicks.toLocaleString()}회`} />
         <Kpi Icon={Percent} label="클릭률" value={`${ctr.toFixed(ctr >= 10 ? 0 : 1)}%`} />
       </div>
 
       {/* 일별 그래프 */}
-      <Card title="일별 추이">
+      <Card title="날짜별 방문·클릭">
         <LineChart rows={data.daily} />
       </Card>
 
       {/* 블록 클릭 순위 */}
-      <Card title="BEST 클릭 순위">
+      <Card title="많이 눌린 버튼">
         <div className="flex items-center gap-2 mb-3">
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#a1a1a6]" />
@@ -199,7 +199,7 @@ export function StatsView({ data }: { data: StatsData }) {
       </Card>
 
       {/* 유입 채널 */}
-      <Card title="유입 채널">
+      <Card title="어디서 들어왔나">
         {data.channels.length === 0 ? (
           <Empty>아직 방문 기록이 없어요</Empty>
         ) : (
@@ -236,7 +236,7 @@ export function StatsView({ data }: { data: StatsData }) {
       </Card>
 
       {/* 유입 기기 */}
-      <Card title="유입 기기">
+      <Card title="어떤 기기로 봤나">
         <DeviceBar mobile={data.devices.mobile} pc={data.devices.pc} />
         {data.inapp.length > 0 && (
           <div className="mt-4">
@@ -258,18 +258,18 @@ export function StatsView({ data }: { data: StatsData }) {
 function Kpi({ Icon, label, value }: { Icon: React.ComponentType<{ className?: string }>; label: string; value: string }) {
   return (
     <div className="px-2 text-center">
-      <div className="flex items-center justify-center gap-1 text-[11px] text-white/70">
+      <div className="flex items-center justify-center gap-1 text-[11px] text-text-2">
         <Icon className="w-3.5 h-3.5" />
         {label}
       </div>
-      <div className="mt-1 text-[16px] font-bold tabular-nums">{value}</div>
+      <div className="mt-1 text-[18px] font-extrabold tabular-nums tracking-tight">{value}</div>
     </div>
   );
 }
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="bg-white rounded-2xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+    <section className="bl-panel p-4">
       <h2 className="text-[15px] font-bold mb-3">{title}</h2>
       {children}
     </section>

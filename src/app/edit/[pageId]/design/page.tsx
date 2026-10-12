@@ -16,7 +16,7 @@ export default async function DesignPage({ params }: { params: { pageId: string 
   const blocks = await getBlocks(page.id);
 
   return (
-    <main className="mx-auto max-w-[560px] px-4 pt-1">
+    <main className="mx-auto max-w-[1080px] px-4 pt-5">
       <DesignForm page={page as any} blocks={(blocks || []) as Block[]} readOnly={effectiveStatus !== 'active'} />
     </main>
   );

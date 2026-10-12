@@ -4,12 +4,12 @@ import { useRef, useState } from 'react';
 import { ImagePlus, Loader2, Trash2 } from 'lucide-react';
 import { uploadImage, type UploadPreset } from '@/lib/upload';
 
-/** 편집기 공통 UI — 리틀리처럼 흑백 톤, 라벨은 회색 작은 글씨 */
+/** 편집기 공통 UI — By링크 톤: 먹색 글자 + 체리 포인트, 칸은 옅은 회색 바탕 */
 
 export function FieldLabel({ children, hint }: { children: React.ReactNode; hint?: string }) {
   return (
     <div className="flex items-baseline justify-between mb-1.5">
-      <span className="text-[13px] font-medium text-[#6b6b70]">{children}</span>
+      <span className="text-[13px] font-semibold text-[#3f3f44]">{children}</span>
       {hint && <span className="text-[11px] text-[#a1a1a6]">{hint}</span>}
     </div>
   );
@@ -39,7 +39,7 @@ export function TextField({
       {label && (
         <FieldLabel hint={hint}>
           {label}
-          {required && <span className="text-[#ef4444]">*</span>}
+          {required && <span className="ml-0.5 text-cherry">*</span>}
         </FieldLabel>
       )}
       <input
@@ -48,7 +48,7 @@ export function TextField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         maxLength={maxLength}
-        className="w-full h-12 px-3.5 rounded-xl border border-[#e4e4e7] bg-white text-[15px] text-[#111] placeholder:text-[#b4b4b8] outline-none focus:border-[#111] transition"
+        className="w-full h-12 px-3.5 rounded-[12px] border border-transparent bg-mist text-[15px] text-ink placeholder:text-[#a9a9ae] outline-none focus:bg-white focus:border-ink focus:shadow-[0_0_0_3px_#ffedf1] transition"
       />
     </label>
   );
@@ -78,7 +78,7 @@ export function TextArea({
         placeholder={placeholder}
         rows={rows}
         maxLength={maxLength}
-        className="w-full px-3.5 py-3 rounded-xl border border-[#e4e4e7] bg-white text-[15px] text-[#111] placeholder:text-[#b4b4b8] outline-none focus:border-[#111] transition resize-none"
+        className="w-full px-3.5 py-3 rounded-[12px] border border-transparent bg-mist text-[15px] text-ink placeholder:text-[#a9a9ae] outline-none focus:bg-white focus:border-ink focus:shadow-[0_0_0_3px_#ffedf1] transition resize-none"
       />
     </label>
   );
@@ -99,14 +99,15 @@ export function Segmented<T extends string>({
   return (
     <div>
       {label && <FieldLabel>{label}</FieldLabel>}
-      <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}>
+      <div className="grid gap-1 p-1 rounded-[14px] bg-mist" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}>
         {options.map((o) => (
           <button
             key={o.value}
             type="button"
             onClick={() => onChange(o.value)}
-            className={`h-11 rounded-xl text-sm font-semibold transition ${
-              value === o.value ? 'bg-[#111] text-white' : 'bg-white border border-[#e4e4e7] text-[#9a9aa0]'
+            aria-pressed={value === o.value}
+            className={`h-10 rounded-[10px] text-[14px] font-semibold transition bl-ring ${
+              value === o.value ? 'bg-white text-ink shadow-[0_1px_3px_rgba(23,23,23,0.14)]' : 'text-[#8b8b90]'
             }`}
           >
             {o.label}
@@ -138,15 +139,22 @@ export function LayoutPicker<T extends string>({
         {options.map((o) => {
           const on = value === o.value;
           return (
-            <button key={o.value} type="button" onClick={() => onChange(o.value)} className="flex flex-col items-center gap-1.5">
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => onChange(o.value)}
+              aria-pressed={on}
+              className="relative flex flex-col items-center gap-1.5 bl-ring rounded-[14px]"
+            >
               <span
-                className={`w-full aspect-square rounded-xl flex items-center justify-center transition ${
-                  on ? 'bg-[#111] text-white' : 'bg-white border border-[#e4e4e7] text-[#c4c4c8]'
+                className={`w-full aspect-[5/4] rounded-[14px] flex items-center justify-center transition border-2 ${
+                  on ? 'border-ink bg-white text-ink' : 'border-transparent bg-mist text-[#b9b9be]'
                 }`}
               >
                 {o.icon}
               </span>
-              <span className={`text-[12px] ${on ? 'text-[#111] font-semibold' : 'text-[#9a9aa0]'}`}>{o.label}</span>
+              {on && <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-cherry" />}
+              <span className={`text-[12px] ${on ? 'text-ink font-bold' : 'text-[#8b8b90]'}`}>{o.label}</span>
             </button>
           );
         })}
@@ -180,7 +188,7 @@ export function Toggle({
         onChange(!checked);
       }}
       className="relative flex-shrink-0 rounded-full transition-colors"
-      style={{ width: w, height: h, backgroundColor: checked ? '#22c55e' : '#d4d4d8' }}
+      style={{ width: w, height: h, backgroundColor: checked ? '#171717' : '#dcdce0' }}
     >
       <span
         className="absolute top-[3px] rounded-full bg-white shadow transition-all"
@@ -190,7 +198,7 @@ export function Toggle({
         className="absolute inset-0 flex items-center text-[9px] font-bold text-white pointer-events-none"
         style={{ justifyContent: checked ? 'flex-start' : 'flex-end', padding: '0 6px' }}
       >
-        {size === 'md' ? (checked ? 'ON' : '') : ''}
+        {''}
       </span>
     </button>
   );
@@ -253,7 +261,7 @@ export function ImageField({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={loading}
-          className={`${box} overflow-hidden flex flex-col items-center justify-center gap-1 border border-dashed border-[#d4d4d8] bg-[#fafafa] text-[#9a9aa0] text-xs`}
+          className={`${box} overflow-hidden flex flex-col items-center justify-center gap-1 bg-mist text-[#8b8b90] text-xs hover:bg-[#ededef] transition bl-ring`}
         >
           {value ? (
             <img src={value} alt="" className="w-full h-full object-cover" />
@@ -276,13 +284,13 @@ export function ImageField({
             type="button"
             onClick={() => onChange('')}
             aria-label="사진 삭제"
-            className="absolute -right-2 -bottom-2 w-9 h-9 rounded-full bg-[#ef4444] text-white flex items-center justify-center shadow-md"
+            className="absolute right-2 bottom-2 h-8 px-2.5 rounded-full bg-ink/85 text-white text-[12px] font-semibold flex items-center gap-1 backdrop-blur"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5" /> 빼기
           </button>
         )}
       </div>
-      {error && <p className="text-xs text-[#ef4444] mt-1.5">{error}</p>}
+      {error && <p className="text-xs text-cherry mt-1.5">{error}</p>}
     </div>
   );
 }
@@ -319,7 +327,7 @@ export function ThumbButton({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="w-full h-full rounded-xl overflow-hidden border border-dashed border-[#d4d4d8] bg-[#fafafa] flex items-center justify-center text-[#a1a1a6]"
+        className="w-full h-full rounded-[12px] overflow-hidden bg-mist flex items-center justify-center text-[#8b8b90] hover:bg-[#ededef] transition bl-ring"
         aria-label="썸네일 올리기"
       >
         {loading ? (
@@ -335,7 +343,7 @@ export function ThumbButton({
           type="button"
           onClick={() => onChange('')}
           aria-label="썸네일 삭제"
-          className="absolute -right-1.5 -bottom-1.5 w-6 h-6 rounded-full bg-[#ef4444] text-white flex items-center justify-center shadow"
+          className="absolute -right-1.5 -top-1.5 w-6 h-6 rounded-full bg-ink text-white flex items-center justify-center ring-2 ring-white"
         >
           <Trash2 className="w-3 h-3" />
         </button>
@@ -369,13 +377,13 @@ export function ConfirmDialog({
         {title && <div className="font-bold text-[16px] mb-1.5">{title}</div>}
         <p className="text-[14px] text-[#444] whitespace-pre-line leading-relaxed">{message}</p>
         <div className="grid grid-cols-2 gap-2 mt-5">
-          <button type="button" onClick={onCancel} className="h-11 rounded-xl border border-[#e4e4e7] text-sm font-semibold">
+          <button type="button" onClick={onCancel} className="h-11 rounded-xl bg-mist text-sm font-semibold">
             취소
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className={`h-11 rounded-xl text-sm font-semibold text-white ${danger ? 'bg-[#ef4444]' : 'bg-[#3b82f6]'}`}
+            className={`h-11 rounded-xl text-sm font-semibold text-white ${danger ? 'bg-cherry' : 'bg-ink'}`}
           >
             {confirmText}
           </button>

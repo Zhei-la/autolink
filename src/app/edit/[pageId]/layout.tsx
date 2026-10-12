@@ -2,13 +2,12 @@ import { redirect, notFound } from 'next/navigation';
 import { getMyPages } from '@/lib/server/data';
 import { q } from '@/lib/server/db';
 import { getMyAccount } from '@/lib/db/account';
-import { EditorNav } from '@/components/editor/EditorNav';
-import { EditorTopBar } from '@/components/editor/EditorTopBar';
+import { EditorHeader } from '@/components/editor/EditorHeader';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * 편집기 공통 틀: 위쪽 주소 줄 + 아래쪽 검은 메뉴(페이지·디자인·분석·관리·페이지 전환)
+ * 편집기 공통 틀: 위쪽 머리(로고 · 페이지 고르기 · 주소) + 탭(블록 · 꾸미기 · 통계 · 받은 문의)
  */
 export default async function EditLayout({
   children,
@@ -39,16 +38,15 @@ export default async function EditLayout({
   const canCreate = effectiveStatus === 'active' && (user.isAdmin || pages.length < limit);
 
   return (
-    <div className="min-h-screen bg-[#f2f2f4] pb-40">
-      <EditorTopBar pageId={current.id} slug={current.slug} title={current.title} />
-      {children}
-      <EditorNav
+    <div className="min-h-screen bg-white pb-28">
+      <EditorHeader
         pageId={current.id}
         pages={pages.map((p) => ({ ...p, avatar: avatarOf.get(p.id) || null }))}
         isAdmin={!!profile?.is_admin}
-        email={user.name + '님'}
+        userName={`${user.name}님`}
         canCreate={canCreate}
       />
+      {children}
     </div>
   );
 }

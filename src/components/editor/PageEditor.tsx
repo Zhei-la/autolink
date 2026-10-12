@@ -2,19 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  Copy,
-  Eye,
-  GripVertical,
-  MoreHorizontal,
-  Plus,
-  Star,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { ChevronDown, Clock, Copy, Eye, GripVertical, Plus, Star, Trash2, X } from 'lucide-react';
 import {
   DndContext,
   KeyboardSensor,
@@ -38,7 +26,7 @@ import type { Block, BlockType, PageTheme } from '@/types';
 import { addBlock, deleteBlock, duplicateBlock, reorderBlocks, setBlockActive, updateBlockData } from '@/lib/db/blocks';
 import { useModalHistory } from '@/hooks/useModalHistory';
 import { PageView } from '@/components/page/PageView';
-import { BLOCK_TYPES, blockMeta, blockSummary } from './blockTypes';
+import { BLOCK_TYPES, BlockGlyph, blockMeta, blockSummary } from './blockTypes';
 import { BlockFields } from './BlockFields';
 import { ConfirmDialog, FieldLabel, Toggle } from './ui';
 
@@ -247,68 +235,87 @@ export function PageEditor({ page, blocks: serverBlocks, readOnly = false, readO
   };
 
   return (
-    <>
-      {readOnly && (
-        <div className="mb-3 p-4 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-600">
-          {readOnlyMessage || '지금은 편집할 수 없어요.'}
+    <div className="lg:grid lg:grid-cols-[minmax(0,560px)_minmax(0,1fr)] lg:gap-14">
+      <div className="min-w-0">
+        {readOnly && (
+          <div className="mb-3 p-4 bg-cherry-soft rounded-2xl text-sm text-cherry-dark">
+            {readOnlyMessage || '지금은 편집할 수 없어요.'}
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-3 p-3 bg-cherry-soft rounded-xl text-sm text-cherry-dark flex items-start justify-between gap-2">
+            <span>{error}</span>
+            <button onClick={() => setError(null)} className="text-xs underline flex-shrink-0">
+              닫기
+            </button>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between h-6 mb-3 px-0.5">
+          <span className="text-[13px] text-[#8b8b90]">
+            {others.length > 1 ? '왼쪽 손잡이를 끌어서 순서를 바꿔요' : '블록을 쌓아서 페이지를 만들어요'}
+          </span>
+          <SaveBadge state={saveState} />
         </div>
-      )}
 
-      {error && (
-        <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 flex items-start justify-between gap-2">
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="text-xs underline flex-shrink-0">
-            닫기
-          </button>
-        </div>
-      )}
-
-      <div className="flex items-center justify-end h-5 mb-1.5 px-1 text-[11px] text-[#a1a1a6]">
-        {saveState === 'saving' ? '저장 중…' : saveState === 'saved' ? '자동 저장됨' : saveState === 'error' ? '저장 실패' : ''}
-      </div>
-
-      <div className="space-y-2.5">
         {profile ? (
-          <BlockCard block={profile} expanded={expanded.has(profile.id)} pinned {...cardProps} />
+          <div className="bl-panel overflow-hidden mb-3">
+            <BlockCard block={profile} expanded={expanded.has(profile.id)} pinned {...cardProps} />
+          </div>
         ) : (
           !readOnly && (
             <button
               onClick={() => handleAdd('profile')}
-              className="w-full h-14 rounded-2xl border-2 border-dashed border-[#d4d4d8] text-[#71717a] text-sm font-semibold flex items-center justify-center gap-1.5"
+              className="w-full h-14 mb-3 rounded-[16px] border-2 border-dashed border-line text-[#3f3f44] text-sm font-semibold flex items-center justify-center gap-1.5 hover:border-ink transition"
             >
-              <Plus className="w-4 h-4" /> 프로필 추가
+              <Plus className="w-4 h-4" /> 프로필 넣기
             </button>
           )
         )}
 
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={others.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-            {others.map((b) => (
-              <SortableCard key={b.id} block={b} expanded={expanded.has(b.id)} {...cardProps} />
-            ))}
-          </SortableContext>
-        </DndContext>
+        {others.length > 0 && (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={others.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+              <div className="rounded-[16px] border border-line divide-y divide-line">
+                {others.map((b) => (
+                  <SortableCard key={b.id} block={b} expanded={expanded.has(b.id)} {...cardProps} />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
 
-        {others.length === 0 && (
-          <div className="text-center py-10 text-sm text-[#a1a1a6]">
-            아래 <strong className="text-[#111]">블록 추가</strong> 버튼으로 링크를 넣어보세요
-          </div>
+        {!readOnly && (
+          <button
+            onClick={() => setShowAdd(true)}
+            className="mt-3 w-full h-14 rounded-[16px] border-2 border-dashed border-line text-ink text-[15px] font-bold flex items-center justify-center gap-1.5 hover:border-cherry hover:text-cherry transition bl-ring"
+          >
+            <Plus className="w-[18px] h-[18px]" /> 블록 추가
+          </button>
         )}
       </div>
 
-      {/* 하단 떠 있는 버튼: 미리보기 / 블록 추가 (하단 메뉴 바로 위) */}
-      <div className="fixed left-0 right-0 bottom-[calc(84px+env(safe-area-inset-bottom))] z-30 pointer-events-none">
-        <div className="mx-auto max-w-[560px] px-4 flex items-center justify-between">
-          <button
-            onClick={() => setShowPreview(true)}
-            className="pointer-events-auto h-11 pl-3.5 pr-4 rounded-full bg-[#3b6cf6] text-white text-sm font-semibold shadow-lg flex items-center gap-1.5"
-          >
+      {/* 넓은 화면: 오른쪽에 실시간 미리보기 */}
+      <aside className="hidden lg:block">
+        <div className="sticky top-[124px]">
+          <PhoneFrame height="calc(100vh - 190px)">
+            <PageView page={page} blocks={blocks} framed />
+          </PhoneFrame>
+          <p className="mt-3 text-center text-[12px] text-[#8b8b90]">고치는 대로 바로 바뀌어요</p>
+        </div>
+      </aside>
+
+      {/* 좁은 화면: 아래에 미리보기 · 블록 추가 */}
+      <div className="lg:hidden fixed left-0 right-0 bottom-[calc(16px+env(safe-area-inset-bottom))] z-30 flex justify-center pointer-events-none">
+        <div className="pointer-events-auto h-12 rounded-full bg-ink text-white flex items-center shadow-[0_8px_24px_rgba(23,23,23,0.28)] overflow-hidden">
+          <button onClick={() => setShowPreview(true)} className="h-full pl-4 pr-4 flex items-center gap-1.5 text-[14px] font-semibold">
             <Eye className="w-4 h-4" /> 미리보기
           </button>
           {!readOnly && (
             <button
               onClick={() => setShowAdd(true)}
-              className="pointer-events-auto h-11 pl-3.5 pr-4 rounded-full bg-[#111] text-white text-sm font-semibold shadow-lg flex items-center gap-1.5"
+              className="h-full pl-3.5 pr-4 flex items-center gap-1.5 text-[14px] font-bold bg-cherry"
             >
               <Plus className="w-4 h-4" /> 블록 추가
             </button>
@@ -322,12 +329,30 @@ export function PageEditor({ page, blocks: serverBlocks, readOnly = false, readO
 
       <ConfirmDialog
         open={!!confirmDelete}
-        message={'정말 삭제하시겠습니까?\n삭제하면 복구할 수 없습니다.'}
-        confirmText="확인"
+        title="이 블록을 지울까요?"
+        message={'지운 블록은 되돌릴 수 없어요.'}
+        confirmText="지우기"
+        danger
         onCancel={() => setConfirmDelete(null)}
         onConfirm={() => confirmDelete && handleDelete(confirmDelete)}
       />
-    </>
+    </div>
+  );
+}
+
+function SaveBadge({ state }: { state: SaveState }) {
+  if (state === 'idle') return null;
+  const map = {
+    saving: { text: '저장 중', dot: 'bg-[#c9c9cd] animate-pulse' },
+    saved: { text: '저장됨', dot: 'bg-ink' },
+    error: { text: '저장 안 됨', dot: 'bg-cherry' },
+  } as const;
+  const m = map[state];
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-[12px] font-semibold ${state === 'error' ? 'text-cherry' : 'text-[#3f3f44]'}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${m.dot}`} />
+      {m.text}
+    </span>
   );
 }
 
@@ -357,7 +382,7 @@ function SortableCard(props: Omit<CardProps, 'dragHandle'>) {
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 40 : undefined, position: 'relative' }}
-      className={isDragging ? 'shadow-2xl rounded-2xl' : ''}
+      className={`bg-white first:rounded-t-[16px] last:rounded-b-[16px] ${isDragging ? 'shadow-[0_12px_32px_rgba(23,23,23,0.18)] rounded-[16px] ring-1 ring-ink' : ''}`}
     >
       <BlockCard
         {...props}
@@ -368,11 +393,13 @@ function SortableCard(props: Omit<CardProps, 'dragHandle'>) {
               {...attributes}
               {...listeners}
               aria-label="끌어서 순서 바꾸기"
-              className="w-7 h-9 -ml-1 flex items-center justify-center text-[#c4c4c8] touch-none cursor-grab active:cursor-grabbing flex-shrink-0"
+              className="w-6 h-10 flex items-center justify-center text-[#c9c9cd] hover:text-ink touch-none cursor-grab active:cursor-grabbing flex-shrink-0"
             >
               <GripVertical className="w-4 h-4" />
             </button>
-          ) : null
+          ) : (
+            <span className="w-6" />
+          )
         }
       />
     </div>
@@ -392,132 +419,117 @@ function BlockCard({
   dragHandle,
 }: CardProps) {
   const meta = blockMeta(block.type);
-  const Icon = meta.Icon;
   const data = block.data || {};
-  const [menu, setMenu] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
   const scheduled = !!(data.visibleFrom || data.visibleUntil);
   const off = block.is_active === false;
-
-  useEffect(() => {
-    if (!menu) return;
-    const close = () => setMenu(false);
-    const t = setTimeout(() => document.addEventListener('click', close), 0);
-    return () => {
-      clearTimeout(t);
-      document.removeEventListener('click', close);
-    };
-  }, [menu]);
+  const summary = blockSummary(block);
 
   return (
-    <div id={`block-${block.id}`} className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+    <div id={`block-${block.id}`}>
       {/* 머리줄 */}
-      <div className="flex items-center gap-2 px-3 h-14">
+      <div className={`flex items-center gap-2.5 pl-1.5 pr-2 min-h-[68px] ${expanded ? 'bg-mist/60' : ''}`}>
         {pinned ? <span className="w-6" /> : dragHandle}
 
-        {expanded && !readOnly && !pinned ? (
-          <Toggle size="sm" checked={!off} onChange={(v) => onActive(block, v)} label="공개" />
-        ) : (
-          <span
-            className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${off ? 'opacity-40' : ''}`}
-            style={{ backgroundColor: meta.color }}
-          >
-            <Icon className="w-4 h-4 text-white" />
-          </span>
-        )}
+        <span className={`w-11 h-11 rounded-[12px] flex items-center justify-center flex-shrink-0 ${expanded ? 'bg-white' : 'bg-mist'}`}>
+          <BlockGlyph type={block.type} size={30} dim={off} />
+        </span>
 
         <button
           type="button"
           onClick={() => onToggleExpand(block.id)}
-          className="flex-1 min-w-0 flex items-center gap-2 text-left h-full"
+          aria-expanded={expanded}
+          className="flex-1 min-w-0 text-left py-2"
         >
-          <span className={`text-[15px] font-bold flex-shrink-0 ${off ? 'text-[#b4b4b8]' : 'text-[#111]'}`}>{meta.label}</span>
-          {!expanded && (
-            <span className="text-[14px] text-[#a1a1a6] truncate">{blockSummary(block)}</span>
-          )}
-          {!expanded && data.highlight && <Star className="w-3.5 h-3.5 fill-[#111] text-[#111] flex-shrink-0" />}
-          {!expanded && scheduled && <Clock className="w-3.5 h-3.5 text-[#3b6cf6] flex-shrink-0" />}
-          {!expanded && off && <span className="text-[11px] font-semibold text-[#b4b4b8] flex-shrink-0">OFF</span>}
+          <span className="flex items-center gap-1.5">
+            <span className={`text-[15px] font-bold ${off ? 'text-[#b4b4b8]' : 'text-ink'}`}>{meta.label}</span>
+            {data.highlight && (
+              <span className="text-[11px] font-bold px-1.5 h-[18px] leading-[18px] rounded-md bg-cherry-soft text-cherry">강조</span>
+            )}
+            {scheduled && <Clock className="w-3.5 h-3.5 text-cherry flex-shrink-0" aria-label="예약 공개" />}
+            {off && <span className="text-[11px] font-bold px-1.5 h-[18px] leading-[18px] rounded-md bg-mist text-[#8b8b90]">숨김</span>}
+          </span>
+          <span className={`block text-[13px] truncate mt-0.5 ${summary ? 'text-[#6b6b70]' : 'text-[#b4b4b8]'}`}>
+            {summary || '눌러서 내용을 채워 주세요'}
+          </span>
         </button>
 
-        {expanded && !readOnly && !pinned && (
-          <div className="flex items-center gap-0.5 flex-shrink-0">
-            {meta.canHighlight && (
-              <button
-                type="button"
-                onClick={() => onChangeData(block.id, (d: any) => ({ ...d, highlight: !d.highlight }))}
-                aria-label="강조"
-                className="w-8 h-8 flex items-center justify-center"
-              >
-                <Star className={`w-[18px] h-[18px] ${data.highlight ? 'fill-[#111] text-[#111]' : 'text-[#c4c4c8]'}`} />
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setShowSchedule((v) => !v)}
-              aria-label="예약 공개"
-              className="w-8 h-8 flex items-center justify-center"
-            >
-              <Clock className={`w-[18px] h-[18px] ${scheduled ? 'text-[#3b6cf6]' : showSchedule ? 'text-[#111]' : 'text-[#c4c4c8]'}`} />
-            </button>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setMenu((v) => !v)}
-                aria-label="블록 메뉴"
-                className="w-8 h-8 flex items-center justify-center text-[#111]"
-              >
-                <MoreHorizontal className="w-[18px] h-[18px]" />
-              </button>
-              {menu && (
-                <div className="absolute right-0 top-9 z-20 w-36 bg-white border border-[#ececef] rounded-xl shadow-lg overflow-hidden">
-                  <button
-                    onClick={() => onDuplicate(block)}
-                    className="w-full h-11 px-3.5 flex items-center gap-2 text-sm hover:bg-[#f4f4f5]"
-                  >
-                    <Copy className="w-4 h-4" /> 블록 복사
-                  </button>
-                  <button
-                    onClick={() => onAskDelete(block)}
-                    className="w-full h-11 px-3.5 flex items-center gap-2 text-sm hover:bg-[#f4f4f5]"
-                  >
-                    <Trash2 className="w-4 h-4" /> 블록 삭제
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+        {!pinned && !readOnly && (
+          <Toggle size="sm" checked={!off} onChange={(v) => onActive(block, v)} label={off ? '보이기' : '숨기기'} />
         )}
 
         <button
           type="button"
           onClick={() => onToggleExpand(block.id)}
           aria-label={expanded ? '접기' : '펼치기'}
-          className="w-8 h-8 flex items-center justify-center text-[#71717a] flex-shrink-0"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-[#8b8b90] hover:bg-white flex-shrink-0"
         >
-          {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+          <ChevronDown className={`w-5 h-5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
         </button>
       </div>
 
       {/* 펼친 내용 */}
       {expanded && (
-        <div className={`px-4 pb-5 pt-1 border-t border-[#f2f2f4] ${readOnly ? 'pointer-events-none opacity-70' : ''}`}>
-          {showSchedule && !pinned && (
-            <SchedulePanel data={data} onChange={(d) => onChangeData(block.id, d)} />
+        <div className={`px-4 pb-5 pt-3 border-t border-line ${readOnly ? 'pointer-events-none opacity-70' : ''}`}>
+          {!pinned && !readOnly && (
+            <div className="flex flex-wrap gap-1.5 mb-4">
+              {meta.canHighlight && (
+                <Chip on={!!data.highlight} onClick={() => onChangeData(block.id, (d: any) => ({ ...d, highlight: !d.highlight }))}>
+                  <Star className={`w-3.5 h-3.5 ${data.highlight ? 'fill-current' : ''}`} /> 강조
+                </Chip>
+              )}
+              <Chip on={scheduled || showSchedule} onClick={() => setShowSchedule((v) => !v)}>
+                <Clock className="w-3.5 h-3.5" /> 예약 공개
+              </Chip>
+              <Chip onClick={() => onDuplicate(block)}>
+                <Copy className="w-3.5 h-3.5" /> 복사
+              </Chip>
+              <Chip onClick={() => onAskDelete(block)} danger>
+                <Trash2 className="w-3.5 h-3.5" /> 지우기
+              </Chip>
+            </div>
           )}
-          <div className="pt-3">
-            <BlockFields type={block.type} data={data} onChange={(d) => onChangeData(block.id, d)} />
-          </div>
+          {showSchedule && !pinned && <SchedulePanel data={data} onChange={(d) => onChangeData(block.id, d)} />}
+          <BlockFields type={block.type} data={data} onChange={(d) => onChangeData(block.id, d)} />
           {pinned && !readOnly && (
-            <div className="mt-4 text-right">
-              <button onClick={() => onAskDelete(block)} className="text-xs text-[#a1a1a6] underline">
-                프로필 블록 삭제
+            <div className="mt-5 text-right">
+              <button onClick={() => onAskDelete(block)} className="text-xs text-[#8b8b90] underline">
+                프로필 빼기
               </button>
             </div>
           )}
         </div>
       )}
     </div>
+  );
+}
+
+function Chip({
+  on,
+  danger,
+  onClick,
+  children,
+}: {
+  on?: boolean;
+  danger?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      className={`h-8 px-3 rounded-full text-[13px] font-semibold inline-flex items-center gap-1 transition bl-ring ${
+        on
+          ? 'bg-cherry text-white'
+          : danger
+            ? 'bg-white border border-line text-[#8b8b90] hover:text-cherry hover:border-cherry'
+            : 'bg-white border border-line text-[#3f3f44] hover:border-ink'
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -541,14 +553,14 @@ function SchedulePanel({ data, onChange }: { data: any; onChange: (d: any) => vo
   const until = data.visibleUntil ? Date.parse(data.visibleUntil) : NaN;
   const status =
     !Number.isNaN(from) && now < from
-      ? '공개 전 — 시작 시간이 되면 보여요'
+      ? '시작 시간이 되면 보여요'
       : !Number.isNaN(until) && now > until
-        ? '종료됨 — 지금은 안 보여요'
+        ? '끝나서 지금은 안 보여요'
         : data.visibleFrom || data.visibleUntil
           ? '지금 공개 중'
           : '';
   return (
-    <div className="mt-3 rounded-xl bg-[#f6f7fb] p-3.5">
+    <div className="mb-4 rounded-[14px] border border-cherry/30 bg-cherry-soft/50 p-3.5">
       <FieldLabel hint={status}>예약 공개</FieldLabel>
       <div className="grid grid-cols-2 gap-2">
         <label className="block">
@@ -557,7 +569,7 @@ function SchedulePanel({ data, onChange }: { data: any; onChange: (d: any) => vo
             type="datetime-local"
             value={toLocalInput(data.visibleFrom)}
             onChange={(e) => onChange({ ...data, visibleFrom: fromLocalInput(e.target.value) })}
-            className="w-full h-10 px-2 rounded-lg border border-[#e4e4e7] bg-white text-[13px]"
+            className="w-full h-10 px-2 rounded-[10px] border border-line bg-white text-[13px]"
           />
         </label>
         <label className="block">
@@ -566,7 +578,7 @@ function SchedulePanel({ data, onChange }: { data: any; onChange: (d: any) => vo
             type="datetime-local"
             value={toLocalInput(data.visibleUntil)}
             onChange={(e) => onChange({ ...data, visibleUntil: fromLocalInput(e.target.value) })}
-            className="w-full h-10 px-2 rounded-lg border border-[#e4e4e7] bg-white text-[13px]"
+            className="w-full h-10 px-2 rounded-[10px] border border-line bg-white text-[13px]"
           />
         </label>
       </div>
@@ -596,46 +608,44 @@ function AddBlockSheet({
   onPick: (t: BlockType) => void;
   onClose: () => void;
 }) {
-  const groups: { key: string; label: string; items: typeof BLOCK_TYPES }[] = [
-    { key: 'content', label: '콘텐츠', items: BLOCK_TYPES.filter((b) => b.category === 'content') },
-    { key: 'communication', label: '커뮤니케이션', items: BLOCK_TYPES.filter((b) => b.category === 'communication') },
+  const show = BLOCK_TYPES.filter((b) => b.category === 'show');
+  const groups = [
+    { key: 'show', label: '페이지에 보여줄 것', items: hasProfile ? show : [BLOCK_TYPES[0], ...show] },
+    { key: 'receive', label: '방문자에게 받을 것', items: BLOCK_TYPES.filter((b) => b.category === 'receive') },
   ];
-  if (!hasProfile) groups[0].items = [BLOCK_TYPES[0], ...groups[0].items];
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/40 flex items-end sm:items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] bg-ink/40 flex items-end sm:items-center justify-center" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white w-full max-w-[560px] rounded-t-3xl sm:rounded-3xl max-h-[88vh] overflow-y-auto"
+        className="bg-white w-full max-w-[600px] rounded-t-[24px] sm:rounded-[24px] max-h-[88vh] overflow-y-auto"
       >
-        <div className="sticky top-0 bg-white flex items-center justify-between px-5 h-14 border-b border-[#f2f2f4]">
-          <h2 className="font-bold text-[16px]">블록 추가</h2>
-          <button onClick={onClose} aria-label="닫기" className="w-9 h-9 flex items-center justify-center">
+        <div className="sticky top-0 z-10 bg-white flex items-center justify-between px-5 h-16">
+          <h2 className="font-extrabold text-[18px] text-ink">무엇을 넣을까요?</h2>
+          <button onClick={onClose} aria-label="닫기" className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-mist">
             <X className="w-5 h-5" />
           </button>
         </div>
         <div className="px-5 pb-8">
           {groups.map((g) => (
-            <div key={g.key} className="pt-5">
-              <div className="text-[13px] text-[#71717a] mb-2">{g.label}</div>
-              <div className="space-y-1">
+            <section key={g.key} className="mb-6 last:mb-0">
+              <h3 className="text-[13px] font-semibold text-[#8b8b90] mb-2.5">{g.label}</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {g.items.map((b) => (
                   <button
                     key={b.type}
                     onClick={() => onPick(b.type)}
-                    className="w-full flex items-center gap-3.5 px-2 py-2.5 rounded-xl hover:bg-[#f4f4f5] active:bg-[#e8f3ff] text-left"
+                    className="group text-left rounded-[16px] border border-line p-3 hover:border-ink active:bg-mist transition bl-ring"
                   >
-                    <span className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: b.color }}>
-                      <b.Icon className="w-5 h-5 text-white" />
+                    <span className="w-full aspect-[2/1] rounded-[12px] bg-mist flex items-center justify-center mb-2.5 group-hover:bg-cherry-soft transition">
+                      <BlockGlyph type={b.type} size={40} />
                     </span>
-                    <span>
-                      <span className="block text-[15px] font-semibold text-[#111]">{b.label}</span>
-                      <span className="block text-[12px] text-[#9a9aa0]">{b.desc}</span>
-                    </span>
+                    <span className="block text-[15px] font-bold text-ink">{b.label}</span>
+                    <span className="block text-[12px] leading-snug text-[#8b8b90] mt-0.5">{b.desc}</span>
                   </button>
                 ))}
               </div>
-            </div>
+            </section>
           ))}
         </div>
       </div>
@@ -644,8 +654,19 @@ function AddBlockSheet({
 }
 
 // ---------------------------------------------------------------------------
-// 미리보기 (폰 프레임)
+// 휴대폰 틀 (미리보기)
 // ---------------------------------------------------------------------------
+
+export function PhoneFrame({ children, height = 'min(760px, 82vh)' }: { children: React.ReactNode; height?: string }) {
+  return (
+    <div className="mx-auto w-full max-w-[360px] rounded-[46px] bg-ink p-[9px] shadow-[0_24px_60px_rgba(23,23,23,0.22)]" style={{ height }}>
+      <div className="relative w-full h-full rounded-[38px] overflow-hidden bg-white">
+        <span className="absolute top-2.5 left-1/2 -translate-x-1/2 z-10 w-20 h-5 rounded-full bg-ink" aria-hidden />
+        <div className="w-full h-full overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{children}</div>
+      </div>
+    </div>
+  );
+}
 
 export function PreviewSheet({
   page,
@@ -657,20 +678,15 @@ export function PreviewSheet({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[70] bg-black/55 flex items-center justify-center p-4" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-[380px] h-[min(780px,86vh)]">
-        <div className="absolute inset-0 rounded-[44px] bg-[#e9e9ec] p-[10px] shadow-2xl">
-          <div className="w-full h-full rounded-[36px] overflow-hidden overflow-y-auto relative bg-white [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <PageView page={page} blocks={blocks} framed />
-          </div>
-        </div>
-        <button
-          onClick={onClose}
-          className="absolute left-1/2 -translate-x-1/2 -bottom-5 h-12 px-6 rounded-full bg-white shadow-lg flex items-center gap-2 text-[15px] font-semibold"
-        >
-          <X className="w-5 h-5" /> 닫기
-        </button>
+    <div className="fixed inset-0 z-[70] bg-white/80 backdrop-blur-md flex flex-col items-center justify-center p-4 gap-4" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full">
+        <PhoneFrame>
+          <PageView page={page} blocks={blocks} framed />
+        </PhoneFrame>
       </div>
+      <button onClick={onClose} className="h-12 px-6 rounded-full bg-ink text-white flex items-center gap-2 text-[15px] font-semibold">
+        <X className="w-5 h-5" /> 닫기
+      </button>
     </div>
   );
 }

@@ -13,7 +13,7 @@ export default async function SettingsPage({ params }: { params: { pageId: strin
   if (!page) notFound();
 
   return (
-    <main className="mx-auto max-w-[560px] px-4 pt-1">
+    <main className="mx-auto max-w-[640px] px-4 pt-5">
       <PageSettingsForm page={page as any} />
     </main>
   );

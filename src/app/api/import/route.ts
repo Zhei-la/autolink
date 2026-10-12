@@ -122,3 +122,18 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ ok: true, id: pageId, slug });
 }
+
+/** 내 페이지 내용 꺼내 보기 (같은 형식으로 고쳐서 다시 넣을 수 있게) — GET ?slug=아이디 */
+export async function GET(request: Request) {
+  const { user } = await getMyAccount();
+  if (!user) return NextResponse.json({ error: '로그인이 필요해요' }, { status: 401 });
+  const slug = (new URL(request.url).searchParams.get('slug') || '').toLowerCase();
+  const page = await one<{ id: string; title: string; slug: string; theme: any }>(
+    `SELECT id, title, slug, theme FROM bl_pages WHERE slug = $1 AND user_id = $2`,
+    [slug, user.id]
+  );
+  if (!page) return NextResponse.json({ error: '내 페이지가 아니에요' }, { status: 404 });
+  const { q } = await import('@/lib/server/db');
+  const blocks = await q(`SELECT type, data, is_active FROM bl_blocks WHERE page_id = $1 ORDER BY position, created_at`, [page.id]);
+  return NextResponse.json({ title: page.title, slug: page.slug, theme: page.theme, blocks });
+}

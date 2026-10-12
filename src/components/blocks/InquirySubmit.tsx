@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { MessageSquare } from 'lucide-react';
+import { withBase } from '@/lib/utils';
 
 interface Props {
   blockId: string;
@@ -26,7 +27,7 @@ export function InquirySubmit({ blockId, title, buttonText, options, primaryColo
     setStatus('loading');
     setMessage('');
     try {
-      const res = await fetch('/api/inquiry', {
+      const res = await fetch(withBase('/api/inquiry'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ blockId, selectedOption: selected }),

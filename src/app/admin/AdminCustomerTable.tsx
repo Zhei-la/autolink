@@ -1,4 +1,5 @@
 'use client';
+import { publicPath } from '@/lib/theme';
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
@@ -251,13 +252,13 @@ function CustomerRow({ customer: c }: { customer: AdminCustomer }) {
                 {pages.map((p) => (
                   <a
                     key={p.id}
-                    href={`/p/${p.slug}`}
+                    href={publicPath(p.slug)}
                     target="_blank"
                     rel="noopener"
                     className="flex items-center justify-between text-sm px-3 py-2 rounded-lg bg-white border border-border hover:border-primary"
                   >
                     <span className="truncate">
-                      {p.title} <span className="text-text-3 text-xs">/p/{p.slug}</span>
+                      {p.title} <span className="text-text-3 text-xs">{publicPath(p.slug)}</span>
                       {!p.is_published && <span className="ml-1 text-[10px] text-text-3">(비공개)</span>}
                     </span>
                     <span className="text-xs text-text-3 inline-flex items-center gap-1 flex-shrink-0">

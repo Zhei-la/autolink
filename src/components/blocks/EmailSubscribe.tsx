@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Mail } from 'lucide-react';
+import { withBase } from '@/lib/utils';
 
 interface Props {
   blockId: string;
@@ -23,7 +24,7 @@ export function EmailSubscribe({ blockId, title, description, buttonText, primar
     setStatus('loading');
     setMessage('');
     try {
-      const res = await fetch('/api/email', {
+      const res = await fetch(withBase('/api/email'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ blockId, email, consent: true }),

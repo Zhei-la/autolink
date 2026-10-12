@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Check, Copy, ExternalLink, Settings, Share } from 'lucide-react';
-import { publicUrl } from '@/lib/theme';
+import { publicUrl, publicPath } from '@/lib/theme';
 
 export function EditorTopBar({ pageId, slug, title }: { pageId: string; slug: string; title: string }) {
   const [origin, setOrigin] = useState('');
@@ -45,13 +45,13 @@ export function EditorTopBar({ pageId, slug, title }: { pageId: string; slug: st
       <div className="mx-auto max-w-[560px] px-4 pt-3 pb-2">
         <div className="h-12 rounded-2xl bg-white flex items-center gap-1 pl-4 pr-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
           <a
-            href={`/p/${slug}`}
+            href={publicPath(slug)}
             target="_blank"
             rel="noopener"
             className="flex-1 min-w-0 text-[14px] text-[#3b6cf6] underline underline-offset-2 truncate"
             title="내 페이지 열기"
           >
-            {label || `/p/${slug}`}
+            {label || publicPath(slug)}
           </a>
           <IconBtn onClick={copy} label="주소 복사">
             {copied ? <Check className="w-[18px] h-[18px] text-[#22c55e]" /> : <Copy className="w-[18px] h-[18px]" />}
@@ -60,7 +60,7 @@ export function EditorTopBar({ pageId, slug, title }: { pageId: string; slug: st
             <Share className="w-[18px] h-[18px]" />
           </IconBtn>
           <a
-            href={`/p/${slug}`}
+            href={publicPath(slug)}
             target="_blank"
             rel="noopener"
             aria-label="새 창에서 열기"

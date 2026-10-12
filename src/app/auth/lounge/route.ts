@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   await ensureAccount(user.id);
 
   const base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || url.origin;
-  const res = NextResponse.redirect(`${base}${next}`, { status: 302 });
+  const res = NextResponse.redirect(`${base}${process.env.NEXT_PUBLIC_BASE_PATH || ''}${next}`, { status: 302 });
   res.cookies.set(SESSION_COOKIE, sessionCookieValue(user.id), sessionCookieOptions);
   return res;
 }

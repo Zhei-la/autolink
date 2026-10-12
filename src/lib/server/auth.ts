@@ -68,7 +68,7 @@ export const sessionCookieOptions = {
   httpOnly: true,
   sameSite: 'lax' as const,
   secure: process.env.NODE_ENV === 'production',
-  path: '/',
+  path: process.env.NEXT_PUBLIC_BASE_PATH || '/',
   maxAge: SESSION_DAYS * 86400,
 };
 

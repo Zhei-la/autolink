@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { withBase } from '@/lib/utils';
 
 /**
  * 공개 페이지 방문을 /api/view 로 보고.
@@ -29,10 +30,10 @@ export function ViewTracker({ pageId }: { pageId: string }) {
     // sendBeacon 은 페이지 이탈 중에도 전송 보장. JSON 헤더를 위해 Blob 사용.
     const sent =
       typeof navigator.sendBeacon === 'function' &&
-      navigator.sendBeacon('/api/view', new Blob([payload], { type: 'application/json' }));
+      navigator.sendBeacon(withBase('/api/view'), new Blob([payload], { type: 'application/json' }));
 
     if (!sent) {
-      fetch('/api/view', {
+      fetch(withBase('/api/view'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: payload,

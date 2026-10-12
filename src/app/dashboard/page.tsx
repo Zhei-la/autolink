@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { Plus, ExternalLink, Edit3, ShieldCheck, BarChart3 } from 'lucide-react';
 import { getMyAccount, STATUS_MESSAGE } from '@/lib/db/account';
 import { Logo } from '@/components/brand/Logo';
-import { publicUrlLabel } from '@/lib/theme';
+import { publicUrlLabel, publicPath } from '@/lib/theme';
+import { withBase } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,7 +44,7 @@ export default async function DashboardPage({
             )}
             <a href={loungeUrl()} className="text-sm text-text-2 hover:text-text hidden sm:inline">바이란미디어</a>
             <span className="text-sm text-text font-bold hidden sm:inline">{user.name}님</span>
-            <form action="/auth/signout" method="post">
+            <form action={withBase('/auth/signout')} method="post">
               <button className="text-sm text-text-2 hover:text-text">로그아웃</button>
             </form>
           </div>
@@ -122,12 +123,12 @@ export default async function DashboardPage({
                       )}
                     </div>
                     <a
-                      href={`/p/${page.slug}`}
+                      href={publicPath(page.slug)}
                       target="_blank"
                       rel="noopener"
                       className="inline-flex items-center gap-1 text-sm text-[#3b6cf6] hover:underline"
                     >
-                      {process.env.NEXT_PUBLIC_PUBLIC_HOST ? publicUrlLabel(page.slug) : `/p/${page.slug}`}{' '}
+                      {publicUrlLabel(page.slug)}{' '}
                       <ExternalLink className="w-3 h-3" />
                     </a>
                     <div className="flex items-center gap-3 mt-2 text-xs text-text-3">

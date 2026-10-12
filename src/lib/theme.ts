@@ -165,15 +165,18 @@ export function isScheduledVisible(data: any, now: number = Date.now()): boolean
  * 공개 주소. NEXT_PUBLIC_PUBLIC_HOST(예: link.byranmedia.com)가 있으면 짧은 주소,
  * 없으면 지금 서버의 /p/<slug>.
  */
+const BASE = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/$/, '');
+
+/** 같은 사이트 안에서 여는 공개 페이지 주소 (하위 경로면 byranmedia.com/bylink/아이디 처럼 짧게) */
 export function publicPath(slug: string): string {
-  return `/p/${slug}`;
+  return BASE ? `${BASE}/${slug}` : `/p/${slug}`;
 }
 
 export function publicUrl(slug: string, origin?: string): string {
   const host = process.env.NEXT_PUBLIC_PUBLIC_HOST;
   if (host) return `https://${host}/${slug}`;
-  const base = origin || process.env.NEXT_PUBLIC_SITE_URL || '';
-  return `${base.replace(/\/$/, '')}/p/${slug}`;
+  const base = (process.env.NEXT_PUBLIC_SITE_URL || origin || '').replace(/\/$/, '');
+  return `${base}${publicPath(slug)}`;
 }
 
 /** 화면에 보여줄 짧은 주소 (https:// 생략) */

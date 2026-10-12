@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { withBase } from '@/lib/utils';
 
 /**
  * 공개 페이지에서 외부로 나가는 링크.
@@ -20,7 +21,7 @@ export function buildClickHref(blockId: string, url: string, withContext = false
     if (um) params.set('um', um);
     if (uc) params.set('uc', uc);
   }
-  return `/api/click/${blockId}?${params.toString()}`;
+  return withBase(`/api/click/${blockId}?${params.toString()}`);
 }
 
 export function TrackedLink({

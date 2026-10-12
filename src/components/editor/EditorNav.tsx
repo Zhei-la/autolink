@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { BarChart3, Check, ClipboardList, FileText, LayoutGrid, LogOut, Palette, Plus, Settings, ShieldCheck, X } from 'lucide-react';
 import { useModalHistory } from '@/hooks/useModalHistory';
+import { withBase } from '@/lib/utils';
 
 interface NavPage {
   id: string;
@@ -127,7 +128,7 @@ export function EditorNav({
               <MenuRow href="/dashboard" Icon={LayoutGrid} label="멀티 페이지 관리" />
               <MenuRow href={`/edit/${pageId}/settings`} Icon={Settings} label="페이지 설정 (주소·공개·삭제)" />
               {isAdmin && <MenuRow href="/admin" Icon={ShieldCheck} label="운영자 관리" />}
-              <form action="/auth/signout" method="post">
+              <form action={withBase('/auth/signout')} method="post">
                 <button className="w-full flex items-center gap-3 h-12 text-[15px] text-[#111]">
                   <LogOut className="w-[18px] h-[18px]" /> 로그아웃
                 </button>

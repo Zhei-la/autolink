@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/server/auth';
 import { one } from '@/lib/server/db';
+import { withBase } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,5 +25,5 @@ export async function POST(request: Request) {
     file.type,
     buf,
   ]);
-  return NextResponse.json({ url: `/img/${row!.id}` });
+  return NextResponse.json({ url: withBase(`/img/${row!.id}`) });
 }

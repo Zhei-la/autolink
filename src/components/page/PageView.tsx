@@ -692,7 +692,7 @@ function Footer({ theme, ink }: { theme: Theme; ink: string }) {
   }
   return (
     <div className="mt-12 flex justify-center">
-      <a href="/" className="inline-flex items-center gap-1.5 text-[11px] opacity-60 hover:opacity-100 transition" style={{ color: ink }}>
+      <a href={`${process.env.NEXT_PUBLIC_LOUNGE_URL || 'https://byranmedia.com'}/bylink`} className="inline-flex items-center gap-1.5 text-[11px] opacity-60 hover:opacity-100 transition" style={{ color: ink }}>
         <span>made with</span>
         <Wordmark size="sm" />
       </a>

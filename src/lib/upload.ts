@@ -1,4 +1,5 @@
 export type UploadPreset = "cover" | "thumb" | "logo" | "gallery" | "background";
+import { withBase } from '@/lib/utils';
 
 /** 프리셋별 리사이즈 기준 (긴 변 px) + 정사각 크롭 여부 */
 const PRESETS: Record<UploadPreset, { max: number; square?: boolean }> = {
@@ -86,7 +87,7 @@ export async function uploadImage(file: File, preset: UploadPreset = "gallery") 
   const blob = await prepareImage(file, preset);
   const fd = new FormData();
   fd.append("file", blob, file.name || "image");
-  const res = await fetch("/api/upload", { method: "POST", body: fd });
+  const res = await fetch(withBase("/api/upload"), { method: "POST", body: fd });
   const json = await res.json().catch(() => ({}));
   if (!res.ok || !json.url) throw new Error(json.error || "이미지를 올리지 못했어요");
   return json.url as string;

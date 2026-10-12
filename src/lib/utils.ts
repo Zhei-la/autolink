@@ -34,8 +34,13 @@ export function isValidSlug(slug: string): boolean {
 }
 
 /** 공개 주소 첫 칸으로 쓸 수 없는 예약어 */
+/** byranmedia.com/bylink 처럼 하위 경로에서 돌 때의 앞부분 ('' 이면 루트) */
+export const BASE_PATH = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/$/, '');
+/** fetch·<a>·<form> 처럼 Next 가 자동으로 앞부분을 붙여주지 않는 곳에 쓰는 주소 */
+export const withBase = (path: string) => `${BASE_PATH}${path}`;
+
 export const RESERVED_SLUGS = new Set([
-  'p', 'api', 'admin', 'login', 'logout', 'dashboard', 'edit', 'auth', 'stats', 'settings',
+  'p', 'go', 'img', 'api', 'admin', 'login', 'logout', 'dashboard', 'edit', 'auth', 'stats', 'settings',
   'design', 'manage', '_next', 'favicon.ico', 'robots.txt', 'sitemap.xml',
 ]);
 

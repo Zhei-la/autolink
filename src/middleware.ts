@@ -7,13 +7,32 @@ import { NextResponse, type NextRequest } from 'next/server';
  */
 const PUBLIC_HOST = (process.env.NEXT_PUBLIC_PUBLIC_HOST || '').toLowerCase();
 const RESERVED = new Set([
-  'p', 'api', 'admin', 'login', 'logout', 'dashboard', 'edit', 'auth', 'stats', 'img',
+  'p', 'go', 'api', 'admin', 'login', 'logout', 'dashboard', 'edit', 'auth', 'stats', 'img',
   '_next', 'favicon.ico', 'robots.txt', 'sitemap.xml',
 ]);
 const PROTECTED = ['/dashboard', '/edit', '/admin'];
 
+const BASE = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/$/, '');
+const CANONICAL = (process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '');
+
 export function middleware(request: NextRequest) {
-  const path = request.nextUrl.pathname;
+  const path = request.nextUrl.pathname; // basePath(/bylink) 는 빠진 값
+
+  // Railway 기본 주소로 직접 들어오면 정식 주소(byranmedia.com/bylink)로
+  const reqHost = (request.headers.get('host') || '').toLowerCase();
+  if (CANONICAL && reqHost.endsWith('.up.railway.app')) {
+    return NextResponse.redirect(`${CANONICAL}${BASE}${path}${request.nextUrl.search}`, 308);
+  }
+
+  // 하위 경로 모드: byranmedia.com/bylink/아이디 → 공개 페이지
+  if (BASE) {
+    const m = path.match(/^\/([a-z0-9_.-]{3,30})\/?$/i);
+    if (m && !RESERVED.has(m[1].toLowerCase())) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/p/${m[1].toLowerCase()}`;
+      return NextResponse.rewrite(url);
+    }
+  }
 
   if (PUBLIC_HOST) {
     const host = (request.headers.get('host') || '').toLowerCase().split(':')[0];

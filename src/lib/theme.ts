@@ -123,12 +123,26 @@ export function buttonLook(theme: ReturnType<typeof resolveTheme>, highlight: bo
   const text = readableOn(base);
 
   if (theme.buttonStyle === 'outline') {
-    const line = colored ? theme.primaryColor : readableOn(theme.bgColor) === '#ffffff' ? '#ffffff' : '#111111';
+    // 강조한 버튼은 꽉 채워서 눈에 띄게, 나머지는 선만
+    if (highlight) {
+      return {
+        radius,
+        style: {
+          backgroundColor: theme.primaryColor,
+          color: readableOn(theme.primaryColor),
+          border: `1.5px solid ${theme.primaryColor}`,
+          borderRadius: radius,
+        } as CSSProperties,
+        colored: true,
+      };
+    }
+    const onBg = readableOn(theme.bgColor); // 바탕 위에서 읽히는 글자색
+    const line = colored ? theme.primaryColor : onBg;
     return {
       radius,
       style: {
         backgroundColor: colored ? withAlpha(theme.primaryColor, 0.08) : 'transparent',
-        color: readableOn(theme.bgColor) === '#ffffff' && !colored ? '#ffffff' : '#111111',
+        color: onBg,
         border: `1.5px solid ${line}`,
         borderRadius: radius,
       } as CSSProperties,

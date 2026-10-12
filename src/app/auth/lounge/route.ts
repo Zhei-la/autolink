@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { SESSION_COOKIE, sessionCookieOptions, sessionCookieValue, verify, loungeUrl } from '@/lib/server/auth';
+import { OWNER_COOKIE, SESSION_COOKIE, ownerCookieOptions, ownerCookieValue, sessionCookieOptions, sessionCookieValue, verify, loungeUrl } from '@/lib/server/auth';
 import { ensureAccount } from '@/lib/db/account';
 import { one } from '@/lib/server/db';
 
@@ -27,5 +27,6 @@ export async function GET(request: Request) {
   const base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || url.origin;
   const res = NextResponse.redirect(`${base}${process.env.NEXT_PUBLIC_BASE_PATH || ''}${next}`, { status: 302 });
   res.cookies.set(SESSION_COOKIE, sessionCookieValue(user.id), sessionCookieOptions);
+  res.cookies.set(OWNER_COOKIE, ownerCookieValue(user.id), ownerCookieOptions);
   return res;
 }

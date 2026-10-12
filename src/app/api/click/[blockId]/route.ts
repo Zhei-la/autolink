@@ -1,5 +1,6 @@
 import { one, q } from '@/lib/server/db';
 import { isUuid } from '@/lib/utils';
+import { viewerUid } from '@/lib/server/auth';
 import { NextResponse } from 'next/server';
 import { appendRefParams, buildVisitMeta, isBot } from '@/lib/tracking';
 import { normalizeUrl } from '@/lib/url';
@@ -41,10 +42,14 @@ export async function GET(
   if (!isBot(ua)) {
     try {
       const block = isUuid(params.blockId)
-        ? await one<{ page_id: string }>(`SELECT page_id FROM bl_blocks WHERE id = $1`, [params.blockId])
+        ? await one<{ page_id: string; user_id: number }>(
+            `SELECT b.page_id, p.user_id FROM bl_blocks b JOIN bl_pages p ON p.id = b.page_id WHERE b.id = $1`,
+            [params.blockId]
+          )
         : null;
 
-      if (block) {
+      // 페이지 주인이 직접 누른 건 세지 않음
+      if (block && block.user_id !== viewerUid(request)) {
         const meta = buildVisitMeta(request.headers, {
           referrer: url.searchParams.get('r'),
           utm_source: url.searchParams.get('us'),

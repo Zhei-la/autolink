@@ -72,6 +72,27 @@ export const sessionCookieOptions = {
   maxAge: SESSION_DAYS * 86400,
 };
 
+/** 이 기기 주인 표시 (1년) — 로그아웃해도 남아서, 주인이 자기 페이지를 열어도 방문·클릭으로 세지 않음 */
+export const OWNER_COOKIE = 'bl_me';
+export function ownerCookieValue(uid: number): string {
+  return sign({ uid, me: 1, exp: Math.floor(Date.now() / 1000) + 365 * 86400 });
+}
+export const ownerCookieOptions = { ...sessionCookieOptions, maxAge: 365 * 86400 };
+
+/** 요청 쿠키에서 이 기기 주인(회원 번호)을 찾음. 없으면 null — 방문 기록 제외용 */
+export function viewerUid(request: Request): number | null {
+  const raw = request.headers.get('cookie') || '';
+  const get = (name: string) => {
+    const m = raw.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
+    return m ? decodeURIComponent(m[1]) : null;
+  };
+  for (const name of [SESSION_COOKIE, OWNER_COOKIE]) {
+    const d = verify<{ uid: number }>(get(name));
+    if (d?.uid) return d.uid;
+  }
+  return null;
+}
+
 export interface SessionUser {
   id: number;
   name: string;

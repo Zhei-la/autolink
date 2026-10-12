@@ -40,6 +40,11 @@ export const BASE_PATH = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/$/
 export const withBase = (path: string) => `${BASE_PATH}${path}`;
 
 export const RESERVED_SLUGS = new Set([
+  // 바이란미디어 주소와 겹치면 짧은 주소(byranmedia.com/아이디)가 안 열리므로 막아 둠
+  'about', 'agency', 'brief', 'bylink', 'challenge', 'chat', 'comments', 'community', 'consult', 'course',
+  'health', 'home', 'hub', 'inquiry', 'join', 'library', 'member', 'my', 'onboard', 'pending', 'prompts',
+  'referral', 'report', 'results', 'reviews', 'signup', 'store', 'welcome', 'css', 'js', 'manifest.webmanifest',
+  'kakao', 'privacy', 'terms', 'search', 'notice', 'help',
   'p', 'go', 'img', 'api', 'admin', 'login', 'logout', 'dashboard', 'edit', 'auth', 'stats', 'settings',
   'design', 'manage', '_next', 'favicon.ico', 'robots.txt', 'sitemap.xml',
 ]);

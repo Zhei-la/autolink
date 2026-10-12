@@ -1,37 +1,22 @@
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { getMyPage, plain } from '@/lib/server/data';
+import { q } from '@/lib/server/db';
 import { getMyAccount } from '@/lib/db/account';
 import { ManageView } from '@/components/manage/ManageView';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ManagePage({ params }: { params: { pageId: string } }) {
-  const supabase = createClient();
   const { user } = await getMyAccount();
   if (!user) notFound();
 
-  const { data: page } = await supabase
-    .from('pages')
-    .select('id, slug')
-    .eq('id', params.pageId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const page = await getMyPage(params.pageId, user.id);
   if (!page) notFound();
 
-  const [{ data: blocks }, { data: inquiries }, { data: emails }] = await Promise.all([
-    supabase.from('blocks').select('id, type, data').eq('page_id', page.id),
-    supabase
-      .from('inquiry_submissions')
-      .select('id, block_id, selected_option, created_at')
-      .eq('page_id', page.id)
-      .order('created_at', { ascending: false })
-      .limit(1000),
-    supabase
-      .from('email_submissions')
-      .select('id, block_id, email, consent, created_at')
-      .eq('page_id', page.id)
-      .order('created_at', { ascending: false })
-      .limit(1000),
+  const [blocks, inquiries, emails] = await Promise.all([
+    q(`SELECT id, type, data FROM bl_blocks WHERE page_id = $1`, [page.id]),
+    q(`SELECT id, block_id, selected_option, created_at FROM bl_inquiries WHERE page_id = $1 ORDER BY created_at DESC LIMIT 1000`, [page.id]).then((r) => r.map(plain)),
+    q(`SELECT id, block_id, email, consent, created_at FROM bl_emails WHERE page_id = $1 ORDER BY created_at DESC LIMIT 1000`, [page.id]).then((r) => r.map(plain)),
   ]);
 
   const nameOf = new Map((blocks || []).map((b: any) => [b.id, b.data?.title || (b.type === 'email' ? '고객정보' : '문의')]));

@@ -1,34 +1,58 @@
-import { createClient } from '@/lib/supabase/server';
-import type { AccountStatus, Profile } from '@/types';
+import 'server-only';
+import type { AccountStatus } from '@/types';
+import { getSessionUser, type SessionUser } from '@/lib/server/auth';
+import { one, q } from '@/lib/server/db';
 
-/**
- * 로그인한 사용자의 프로필 + 실효 상태(effectiveStatus).
- * expires_at 이 지났으면 DB status 가 active 여도 'expired' 로 취급.
- */
-export async function getMyAccount(): Promise<{
-  user: { id: string; email?: string } | null;
-  profile: Profile | null;
-  effectiveStatus: AccountStatus;
-}> {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { user: null, profile: null, effectiveStatus: 'expired' };
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  return {
-    user: { id: user.id, email: user.email },
-    profile: (profile as Profile) || null,
-    effectiveStatus: computeEffectiveStatus(profile as Profile | null),
-  };
+/** By링크 이용 정보 (라운지 회원마다 하나, 처음 들어올 때 자동으로 만들어짐) */
+export interface BylinkAccount {
+  user_id: number;
+  page_limit: number;
+  status: AccountStatus;
+  expires_at: string | null;
+  admin_memo: string | null;
+  is_admin: boolean;
 }
 
-export function computeEffectiveStatus(profile: Profile | null): AccountStatus {
-  if (!profile) return 'active'; // 프로필 행이 아직 없으면(트리거 지연) 일단 통과
+/** 처음 들어온 회원이면 이용 정보를 만들고, 최근 접속 시각을 남김 */
+export async function ensureAccount(userId: number): Promise<void> {
+  await q(
+    `INSERT INTO bl_accounts (user_id, last_seen_at) VALUES ($1, now())
+     ON CONFLICT (user_id) DO UPDATE SET last_seen_at = now()`,
+    [userId]
+  );
+}
+
+/**
+ * 로그인한 회원 + By링크 이용 정보 + 실효 상태(effectiveStatus).
+ * expires_at 이 지났으면 status 가 active 여도 'expired' 로 취급.
+ */
+export async function getMyAccount(): Promise<{
+  user: (SessionUser & { email?: string | null }) | null;
+  profile: BylinkAccount | null;
+  effectiveStatus: AccountStatus;
+}> {
+  const user = await getSessionUser();
+  if (!user) return { user: null, profile: null, effectiveStatus: 'expired' };
+
+  let row = await one(`SELECT * FROM bl_accounts WHERE user_id = $1`, [user.id]);
+  if (!row) {
+    await ensureAccount(user.id);
+    row = await one(`SELECT * FROM bl_accounts WHERE user_id = $1`, [user.id]);
+  }
+  const profile: BylinkAccount = {
+    user_id: user.id,
+    page_limit: row?.page_limit ?? 3,
+    status: (row?.status as AccountStatus) || 'active',
+    expires_at: row?.expires_at ? new Date(row.expires_at).toISOString() : null,
+    admin_memo: row?.admin_memo ?? null,
+    is_admin: user.isAdmin,
+  };
+  return { user, profile, effectiveStatus: computeEffectiveStatus(profile) };
+}
+
+export function computeEffectiveStatus(profile: Pick<BylinkAccount, 'status' | 'expires_at' | 'is_admin'> | null): AccountStatus {
+  if (!profile) return 'active';
+  if (profile.is_admin) return 'active';
   if (profile.status === 'suspended') return 'suspended';
   if (profile.status === 'expired') return 'expired';
   if (profile.expires_at && new Date(profile.expires_at).getTime() < Date.now()) return 'expired';
@@ -53,7 +77,7 @@ export const STATUS_MESSAGE: Record<AccountStatus, string> = {
  */
 export async function assertCanEdit() {
   const { user, profile, effectiveStatus } = await getMyAccount();
-  if (!user) throw new Error('로그인이 필요합니다');
+  if (!user) throw new Error('로그인이 필요합니다. 바이란미디어에서 다시 들어와 주세요.');
   if (effectiveStatus !== 'active') throw new Error(STATUS_MESSAGE[effectiveStatus]);
   return { user, profile };
 }

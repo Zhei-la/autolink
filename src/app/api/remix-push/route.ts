@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { one, q } from "@/lib/server/db";
+import { isUuid } from "@/lib/utils";
 
 /**
  * 쇼츠 리믹서 등 외부 자동화 프로그램이 상품을 밀어넣는 엔드포인트.
@@ -34,62 +35,41 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "invalid payload" }, { status: 400 });
     }
 
-    const supabase = createAdminClient();
-
-    // 페이지 존재 확인
-    const { data: page } = await supabase.from("pages").select("id").eq("id", pageId).maybeSingle();
+    if (!isUuid(String(pageId))) {
+      return NextResponse.json({ success: false, error: "page not found" }, { status: 404 });
+    }
+    const page = await one(`SELECT id FROM bl_pages WHERE id = $1`, [pageId]);
     if (!page) {
       return NextResponse.json({ success: false, error: "page not found" }, { status: 404 });
     }
 
     // 마지막 product_grid 찾기
-    const { data: existingBlock } = await supabase
-      .from("blocks")
-      .select("*")
-      .eq("page_id", pageId)
-      .eq("type", "product_grid")
-      .order("position", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const existingBlock = await one(
+      `SELECT * FROM bl_blocks WHERE page_id = $1 AND type = 'product_grid' ORDER BY position DESC LIMIT 1`,
+      [pageId]
+    );
 
     if (existingBlock) {
       const oldProducts = existingBlock.data?.products || [];
       const mergedProducts = [...products, ...oldProducts];
-
-      const { error } = await supabase
-        .from("blocks")
-        .update({ data: { ...existingBlock.data, products: mergedProducts } })
-        .eq("id", existingBlock.id);
-
-      if (error) throw error;
-
+      await q(`UPDATE bl_blocks SET data = $1, updated_at = now() WHERE id = $2`, [
+        JSON.stringify({ ...existingBlock.data, products: mergedProducts }),
+        existingBlock.id,
+      ]);
       return NextResponse.json({ success: true, updated: true, blockId: existingBlock.id, total: mergedProducts.length });
     }
 
-    const { data: lastBlock } = await supabase
-      .from("blocks")
-      .select("position")
-      .eq("page_id", pageId)
-      .order("position", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const last = await one<{ position: number }>(
+      `SELECT position FROM bl_blocks WHERE page_id = $1 ORDER BY position DESC LIMIT 1`,
+      [pageId]
+    );
+    const nextPosition = last ? last.position + 1 : 0;
+    const created = await one<{ id: string }>(
+      `INSERT INTO bl_blocks (page_id, type, position, data) VALUES ($1, 'product_grid', $2, $3) RETURNING id`,
+      [pageId, nextPosition, JSON.stringify({ title: "쇼츠 추천 상품", products })]
+    );
 
-    const nextPosition = lastBlock ? lastBlock.position + 1 : 0;
-
-    const { data: created, error } = await supabase
-      .from("blocks")
-      .insert({
-        page_id: pageId,
-        type: "product_grid",
-        position: nextPosition,
-        data: { title: "쇼츠 추천 상품", products },
-      })
-      .select("id")
-      .single();
-
-    if (error) throw error;
-
-    return NextResponse.json({ success: true, created: true, blockId: created.id, total: products.length });
+    return NextResponse.json({ success: true, created: true, blockId: created!.id, total: products.length });
   } catch (err: any) {
     console.error("[remix-push]", err);
     return NextResponse.json({ success: false, error: err.message || "server error" }, { status: 500 });

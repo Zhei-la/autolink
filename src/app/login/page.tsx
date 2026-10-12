@@ -1,10 +1,7 @@
-import { Suspense } from 'react';
-import LoginForm from './LoginForm';
+import { redirect } from 'next/navigation';
+import { loginUrl } from '@/lib/server/auth';
 
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-white" />}>
-      <LoginForm />
-    </Suspense>
-  );
+/** By링크는 따로 로그인하지 않아요 — 바이란미디어 로그인으로 보냄 */
+export default function LoginPage({ searchParams }: { searchParams: { next?: string } }) {
+  redirect(loginUrl(searchParams?.next || '/dashboard'));
 }

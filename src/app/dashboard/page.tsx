@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server';
+import { getMyPages } from '@/lib/server/data';
+import { loungeUrl } from '@/lib/server/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, ExternalLink, Edit3, ShieldCheck, BarChart3 } from 'lucide-react';
@@ -14,22 +15,13 @@ export default async function DashboardPage({
   searchParams?: { error?: string };
 }) {
   const { user, profile, effectiveStatus } = await getMyAccount();
-  if (!user) redirect('/login');
+  if (!user) redirect('/login?next=/dashboard');
 
-  const supabase = createClient();
-
-  // 최근 접속 시각 갱신 (관리자 화면의 "최근 접속" 컬럼용)
-  await supabase.rpc('touch_last_seen').then(() => {}, () => {});
-
-  const { data: pages } = await supabase
-    .from('pages')
-    .select('id, slug, title, view_count, is_published, updated_at')
-    .eq('user_id', user.id)
-    .order('updated_at', { ascending: false });
+  const pages = (await getMyPages(user.id)).sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1));
 
   const pageCount = pages?.length || 0;
   const pageLimit = profile?.page_limit ?? 3;
-  const canCreate = effectiveStatus === 'active' && pageCount < pageLimit;
+  const canCreate = effectiveStatus === 'active' && (user.isAdmin || pageCount < pageLimit);
 
   return (
     <main className="min-h-screen bg-[#f2f2f4]">
@@ -49,7 +41,8 @@ export default async function DashboardPage({
                 <ShieldCheck className="w-4 h-4" /> 운영자
               </Link>
             )}
-            <span className="text-sm text-text-2 hidden sm:inline">{user.email}</span>
+            <a href={loungeUrl()} className="text-sm text-text-2 hover:text-text hidden sm:inline">바이란미디어</a>
+            <span className="text-sm text-text font-bold hidden sm:inline">{user.name}님</span>
             <form action="/auth/signout" method="post">
               <button className="text-sm text-text-2 hover:text-text">로그아웃</button>
             </form>

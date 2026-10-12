@@ -1,5 +1,3 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
-
 /** 분석 탭 기간 */
 export type RangeKey = 'today' | '7d' | '30d' | '90d' | '180d' | 'all' | 'custom';
 
@@ -68,24 +66,6 @@ export function resolveRange(
   return { key: k, startMs: kstStartOf(startDay), endMs: kstStartOf(endDay) + DAY - 1, days };
 }
 
-/** Supabase 는 한 번에 최대 1000행 → 나눠서 모두 가져옴 (최대 50,000행) */
-export async function fetchAllRows(
-  supabase: SupabaseClient,
-  table: string,
-  columns: string,
-  apply: (q: any) => any
-): Promise<{ rows: any[]; error: string | null }> {
-  const size = 1000;
-  const rows: any[] = [];
-  for (let page = 0; page < 50; page++) {
-    const q = apply(supabase.from(table).select(columns)).range(page * size, page * size + size - 1);
-    const { data, error } = await q;
-    if (error) return { rows, error: error.message };
-    rows.push(...(data || []));
-    if (!data || data.length < size) break;
-  }
-  return { rows, error: null };
-}
 
 export function hostOf(referrer?: string | null): string | null {
   if (!referrer) return null;

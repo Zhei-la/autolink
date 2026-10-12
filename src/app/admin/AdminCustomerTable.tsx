@@ -113,7 +113,7 @@ function CustomerRow({ customer: c }: { customer: AdminCustomer }) {
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-sm truncate">{c.email || '(이메일 없음)'}</span>
+            <span className="font-bold text-sm truncate">{c.name || c.email || `회원 #${c.id}`}</span>
             <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${STATUS_STYLE[effective]}`}>
               {STATUS_LABEL[effective]}
             </span>

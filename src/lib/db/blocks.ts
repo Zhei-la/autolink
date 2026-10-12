@@ -1,266 +1,146 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { BlockType } from '@/types';
 import { assertCanEdit } from './account';
+import { one, q, tx } from '@/lib/server/db';
+import { isUuid } from '@/lib/utils';
 
-/**
- * 페이지에 블록 소유권 검증 + 계정 상태(active) 검증.
- * 본인 소유가 아니거나 정지/만료 계정이면 throw.
- */
+const ALLOWED_TYPES: BlockType[] = [
+  'profile', 'link', 'product_grid', 'inquiry', 'calendar', 'email', 'text', 'sns',
+  'link_collection', 'video', 'image_banner', 'spacer',
+];
+
+/** 내 페이지인지 + 편집 가능한 계정인지 확인. 아니면 throw. */
 async function assertPageOwner(pageId: string) {
   const { user } = await assertCanEdit();
-  const supabase = createClient();
-
-  const { data: page } = await supabase
-    .from('pages')
-    .select('id, user_id')
-    .eq('id', pageId)
-    .maybeSingle();
-
-  if (!page || page.user_id !== user.id) {
-    throw new Error('이 페이지에 접근 권한이 없어요');
-  }
-
-  return { supabase, user };
+  if (!isUuid(pageId)) throw new Error('이 페이지에 접근 권한이 없어요');
+  const page = await one(`SELECT id FROM bl_pages WHERE id = $1 AND user_id = $2`, [pageId, user.id]);
+  if (!page) throw new Error('이 페이지에 접근 권한이 없어요');
+  return { user };
 }
 
-/**
- * 블록 추가. position은 가장 마지막으로 자동 설정.
- */
+function touch(pageId: string) {
+  return q(`UPDATE bl_pages SET updated_at = now() WHERE id = $1`, [pageId]);
+}
+
+/** 블록 추가. 프로필은 맨 앞, 나머지는 맨 뒤 */
 export async function addBlock(pageId: string, type: BlockType) {
-  const { supabase } = await assertPageOwner(pageId);
+  await assertPageOwner(pageId);
+  if (!ALLOWED_TYPES.includes(type)) throw new Error('지원하지 않는 블록이에요');
 
-  // 마지막 position 확인 (프로필은 항상 맨 앞)
-  const { data: lastBlock } = await supabase
-    .from('blocks')
-    .select('position')
-    .eq('page_id', pageId)
-    .order('position', { ascending: type === 'profile' })
-    .limit(1)
-    .maybeSingle();
+  const edge = await one<{ min: number | null; max: number | null }>(
+    `SELECT min(position) AS min, max(position) AS max FROM bl_blocks WHERE page_id = $1`,
+    [pageId]
+  );
+  const position =
+    type === 'profile' ? (edge?.min ?? 1) - 1 : edge?.max === null || edge?.max === undefined ? 0 : edge.max + 1;
 
-  const nextPosition =
-    type === 'profile' ? (lastBlock ? lastBlock.position - 1 : 0) : lastBlock ? lastBlock.position + 1 : 0;
-
-  // 타입별 기본 데이터
-  const defaultData = getDefaultBlockData(type);
-
-  const { data: newBlock, error } = await supabase
-    .from('blocks')
-    .insert({
-      page_id: pageId,
-      type,
-      position: nextPosition,
-      data: defaultData,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    // blocks_type_check 위반 = 마이그레이션 001 이 아직 DB 에 적용되지 않음
-    if (error.code === '23514') {
-      throw new Error('이 블록은 DB 업데이트(마이그레이션 001) 후에 쓸 수 있어요. 운영자에게 알려주세요.');
-    }
-    throw new Error(error.message);
-  }
-
+  const block = await one(
+    `INSERT INTO bl_blocks (page_id, type, position, data) VALUES ($1, $2, $3, $4) RETURNING *`,
+    [pageId, type, position, JSON.stringify(getDefaultBlockData(type))]
+  );
+  await touch(pageId);
   revalidatePath(`/edit/${pageId}`);
-  return newBlock;
+  return serialize(block);
 }
 
-/**
- * 블록 켜기/끄기 (리틀리 ON/OFF 토글). 화면에서 바로 바꾸고 서버에 값 그대로 저장.
- */
-export async function setBlockActive(pageId: string, blockId: string, active: boolean) {
-  const { supabase } = await assertPageOwner(pageId);
-  const { error } = await supabase
-    .from('blocks')
-    .update({ is_active: active })
-    .eq('id', blockId)
-    .eq('page_id', pageId);
-  if (error) throw new Error(error.message);
+/** 블록 데이터 저장 (자동 저장) */
+export async function updateBlockData(pageId: string, blockId: string, data: any) {
+  await assertPageOwner(pageId);
+  if (!isUuid(blockId)) throw new Error('블록을 찾을 수 없어요');
+  await q(`UPDATE bl_blocks SET data = $1, updated_at = now() WHERE id = $2 AND page_id = $3`, [
+    JSON.stringify(data ?? {}),
+    blockId,
+    pageId,
+  ]);
+  await touch(pageId);
   revalidatePath(`/edit/${pageId}`);
 }
 
-/**
- * 블록 데이터 업데이트
- */
-export async function updateBlockData(
-  pageId: string,
-  blockId: string,
-  data: any
-) {
-  const { supabase } = await assertPageOwner(pageId);
-
-  const { error } = await supabase
-    .from('blocks')
-    .update({ data })
-    .eq('id', blockId)
-    .eq('page_id', pageId);
-
-  if (error) throw new Error(error.message);
-
-  revalidatePath(`/edit/${pageId}`);
-}
-
-/**
- * 블록 삭제
- */
+/** 블록 삭제 */
 export async function deleteBlock(pageId: string, blockId: string) {
-  const { supabase } = await assertPageOwner(pageId);
-
-  const { error } = await supabase
-    .from('blocks')
-    .delete()
-    .eq('id', blockId)
-    .eq('page_id', pageId);
-
-  if (error) throw new Error(error.message);
-
+  await assertPageOwner(pageId);
+  if (!isUuid(blockId)) return;
+  await q(`DELETE FROM bl_blocks WHERE id = $1 AND page_id = $2`, [blockId, pageId]);
+  await touch(pageId);
   revalidatePath(`/edit/${pageId}`);
 }
 
-/**
- * 블록 위/아래 이동 (인접 블록과 position 교환)
- */
-export async function moveBlock(
-  pageId: string,
-  blockId: string,
-  direction: 'up' | 'down'
-) {
-  const { supabase } = await assertPageOwner(pageId);
-
-  // 현재 블록
-  const { data: current } = await supabase
-    .from('blocks')
-    .select('id, position')
-    .eq('id', blockId)
-    .eq('page_id', pageId)
-    .maybeSingle();
-  if (!current) throw new Error('블록을 찾을 수 없어요');
-
-  // 인접 블록 찾기
-  const { data: neighbor } = await supabase
-    .from('blocks')
-    .select('id, position')
-    .eq('page_id', pageId)
-    .order('position', { ascending: direction === 'up' ? false : true })
-    .lt('position', direction === 'up' ? current.position : 99999)
-    .gt('position', direction === 'down' ? current.position : -1)
-    .limit(1)
-    .maybeSingle();
-
-  if (!neighbor) {
-    // 이미 끝이라 이동 불가 — 조용히 무시
-    return;
-  }
-
-  // position 교환 (임시 음수값 사용해 유니크 제약 회피 - 우리 스키마엔 없지만 안전 위해)
-  const tempPos = -1 - Math.floor(Math.random() * 1000);
-  await supabase.from('blocks').update({ position: tempPos }).eq('id', current.id);
-  await supabase.from('blocks').update({ position: current.position }).eq('id', neighbor.id);
-  await supabase.from('blocks').update({ position: neighbor.position }).eq('id', current.id);
-
-  revalidatePath(`/edit/${pageId}`);
+/** 위/아래 한 칸 이동 (예전 메뉴용) */
+export async function moveBlock(pageId: string, blockId: string, direction: 'up' | 'down') {
+  await assertPageOwner(pageId);
+  const rows = await q(`SELECT id FROM bl_blocks WHERE page_id = $1 ORDER BY position, created_at`, [pageId]);
+  const ids = rows.map((r) => r.id as string);
+  const i = ids.indexOf(blockId);
+  const j = direction === 'up' ? i - 1 : i + 1;
+  if (i < 0 || j < 0 || j >= ids.length) return;
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  await reorderBlocks(pageId, ids);
 }
 
-/**
- * 드래그앤드롭 결과를 그대로 저장 — 정렬된 블록 id 배열을 받아 position 을 0..n-1 로 재부여.
- * (한 칸씩 moveBlock 을 반복 호출하던 방식은 여러 칸 이동 시 1칸만 움직이는 버그가 있었음)
- */
+/** 끌어서 바꾼 순서를 그대로 저장 */
 export async function reorderBlocks(pageId: string, orderedIds: string[]) {
-  const { supabase } = await assertPageOwner(pageId);
-
-  // 페이지에 실제로 속한 블록만 허용
-  const { data: existing } = await supabase
-    .from('blocks')
-    .select('id')
-    .eq('page_id', pageId);
-  const valid = new Set((existing || []).map((b) => b.id));
+  await assertPageOwner(pageId);
+  const rows = await q(`SELECT id FROM bl_blocks WHERE page_id = $1`, [pageId]);
+  const valid = new Set(rows.map((r) => r.id as string));
   const ids = orderedIds.filter((id) => valid.has(id));
   if (ids.length !== valid.size) throw new Error('블록 목록이 최신이 아니에요. 새로고침 후 다시 시도해주세요.');
 
-  // 1단계: 충돌 방지를 위해 큰 오프셋으로 이동 → 2단계: 최종 position
-  const OFFSET = 100000;
-  for (let i = 0; i < ids.length; i++) {
-    await supabase.from('blocks').update({ position: OFFSET + i }).eq('id', ids[i]).eq('page_id', pageId);
-  }
-  for (let i = 0; i < ids.length; i++) {
-    await supabase.from('blocks').update({ position: i }).eq('id', ids[i]).eq('page_id', pageId);
-  }
-
-  revalidatePath(`/edit/${pageId}`);
-}
-
-/**
- * 블록 복제
- */
-export async function duplicateBlock(pageId: string, blockId: string) {
-  const { supabase } = await assertPageOwner(pageId);
-
-  const { data: source } = await supabase
-    .from('blocks')
-    .select('*')
-    .eq('id', blockId)
-    .maybeSingle();
-  if (!source) throw new Error('블록을 찾을 수 없어요');
-
-  // 모든 블록의 position을 source 다음부터 +1 밀기
-  const { data: laterBlocks } = await supabase
-    .from('blocks')
-    .select('id, position')
-    .eq('page_id', pageId)
-    .gt('position', source.position)
-    .order('position', { ascending: false });
-
-  if (laterBlocks) {
-    for (const b of laterBlocks) {
-      await supabase
-        .from('blocks')
-        .update({ position: b.position + 1 })
-        .eq('id', b.id);
+  await tx(async (run) => {
+    for (let i = 0; i < ids.length; i++) {
+      await run(`UPDATE bl_blocks SET position = $1 WHERE id = $2 AND page_id = $3`, [i, ids[i], pageId]);
     }
-  }
-
-  // 새 블록 추가 (source.position + 1 위치)
-  const { data: copy, error } = await supabase
-    .from('blocks')
-    .insert({
-      page_id: pageId,
-      type: source.type,
-      position: source.position + 1,
-      data: source.data,
-      is_active: source.is_active,
-    })
-    .select()
-    .single();
-  if (error) throw new Error(error.message);
-
+  });
+  await touch(pageId);
   revalidatePath(`/edit/${pageId}`);
-  return copy;
 }
 
-/**
- * 블록 활성화/비활성화 토글
- */
-export async function toggleBlockActive(pageId: string, blockId: string) {
-  const { supabase } = await assertPageOwner(pageId);
-
-  const { data: block } = await supabase
-    .from('blocks')
-    .select('is_active')
-    .eq('id', blockId)
-    .maybeSingle();
-  if (!block) return;
-
-  await supabase
-    .from('blocks')
-    .update({ is_active: !block.is_active })
-    .eq('id', blockId);
-
+/** 블록 복사 (바로 아래에) */
+export async function duplicateBlock(pageId: string, blockId: string) {
+  await assertPageOwner(pageId);
+  const copy = await tx(async (run) => {
+    const [src] = await run(`SELECT * FROM bl_blocks WHERE id = $1 AND page_id = $2`, [blockId, pageId]);
+    if (!src) throw new Error('블록을 찾을 수 없어요');
+    await run(`UPDATE bl_blocks SET position = position + 1 WHERE page_id = $1 AND position > $2`, [pageId, src.position]);
+    const [row] = await run(
+      `INSERT INTO bl_blocks (page_id, type, position, data, is_active) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [pageId, src.type, src.position + 1, JSON.stringify(src.data || {}), src.is_active]
+    );
+    return row;
+  });
+  await touch(pageId);
   revalidatePath(`/edit/${pageId}`);
+  return serialize(copy);
+}
+
+/** 켜기/끄기 (값 그대로 저장) */
+export async function setBlockActive(pageId: string, blockId: string, active: boolean) {
+  await assertPageOwner(pageId);
+  await q(`UPDATE bl_blocks SET is_active = $1, updated_at = now() WHERE id = $2 AND page_id = $3`, [
+    !!active,
+    blockId,
+    pageId,
+  ]);
+  await touch(pageId);
+  revalidatePath(`/edit/${pageId}`);
+}
+
+/** 켜기/끄기 뒤집기 (예전 메뉴용) */
+export async function toggleBlockActive(pageId: string, blockId: string) {
+  await assertPageOwner(pageId);
+  await q(`UPDATE bl_blocks SET is_active = NOT is_active WHERE id = $1 AND page_id = $2`, [blockId, pageId]);
+  revalidatePath(`/edit/${pageId}`);
+}
+
+/** DB 행 → 화면에 넘길 수 있는 평범한 객체 (날짜를 글자로) */
+function serialize(row: any) {
+  if (!row) return row;
+  return {
+    ...row,
+    created_at: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
+    updated_at: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
+  };
 }
 
 // ===== 블록 타입별 기본 데이터 =====

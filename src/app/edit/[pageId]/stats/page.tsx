@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { getMyPage, plain } from '@/lib/server/data';
+import { q } from '@/lib/server/db';
 import { getMyAccount } from '@/lib/db/account';
 import { StatsView, type StatsData } from '@/components/stats/StatsView';
 import { blockMeta, blockSummary } from '@/components/editor/blockTypes';
@@ -8,7 +9,6 @@ import {
   SOURCE_LABEL,
   classifyHost,
   deviceFromUA,
-  fetchAllRows,
   hostOf,
   kstDay,
   resolveRange,
@@ -25,37 +25,30 @@ export default async function StatsPage({
   params: { pageId: string };
   searchParams: { range?: string; from?: string; to?: string };
 }) {
-  const supabase = createClient();
   const { user } = await getMyAccount();
   if (!user) notFound();
 
-  const { data: page } = await supabase
-    .from('pages')
-    .select('id, slug, view_count, created_at')
-    .eq('id', params.pageId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const page = await getMyPage(params.pageId, user.id);
   if (!page) notFound();
 
   const range = resolveRange(searchParams.range, searchParams.from, searchParams.to, page.created_at);
   const startIso = new Date(range.startMs).toISOString();
   const endIso = new Date(range.endMs).toISOString();
 
-  const [{ data: blocks }, viewsRes, clicksRes] = await Promise.all([
-    supabase.from('blocks').select('id, type, data, position').eq('page_id', page.id).order('position'),
-    // 방문 상세 (마이그레이션 001 의 page_views). 없으면 error → 클릭만으로 표시
-    fetchAllRows(supabase as any, 'page_views', 'viewed_at, visitor_hash, referrer, referrer_source, device_type, inapp_app', (q) =>
-      q.eq('page_id', page.id).gte('viewed_at', startIso).lte('viewed_at', endIso).order('viewed_at').order('id')
-    ),
-    // 클릭 (기본 스키마에 있음). 001 이전 DB 에도 있는 컬럼만 고르기 위해 * 사용
-    fetchAllRows(supabase as any, 'click_events', '*', (q) =>
-      q.eq('page_id', page.id).gte('created_at', startIso).lte('created_at', endIso).order('created_at').order('id')
-    ),
+  const [blocks, views, clicks] = await Promise.all([
+    q(`SELECT id, type, data, position FROM bl_blocks WHERE page_id = $1 ORDER BY position`, [page.id]),
+    q(
+      `SELECT viewed_at, visitor_hash, referrer, referrer_source, device_type, inapp_app FROM bl_page_views
+        WHERE page_id = $1 AND viewed_at BETWEEN $2 AND $3 ORDER BY viewed_at, id LIMIT 100000`,
+      [page.id, startIso, endIso]
+    ).then((r) => r.map(plain)),
+    q(
+      `SELECT block_id, created_at, referrer, referrer_source, user_agent FROM bl_click_events
+        WHERE page_id = $1 AND created_at BETWEEN $2 AND $3 ORDER BY created_at, id LIMIT 100000`,
+      [page.id, startIso, endIso]
+    ).then((r) => r.map(plain)),
   ]);
-
-  const viewsAvailable = !viewsRes.error;
-  const views = viewsRes.rows;
-  const clicks = clicksRes.rows;
+  const viewsAvailable = true;
 
   // 일별
   const byDay = new Map(range.days.map((d) => [d, { day: d, views: 0, clicks: 0 }]));
@@ -71,7 +64,7 @@ export default async function StatsPage({
   // 블록별 클릭
   const clickCount = new Map<string, number>();
   clicks.forEach((c) => clickCount.set(c.block_id, (clickCount.get(c.block_id) || 0) + 1));
-  const blockRows = (blocks || [])
+  const blockRows = blocks
     .filter((b) => CLICKABLE.has(b.type) || clickCount.has(b.id))
     .map((b) => {
       const meta = blockMeta(b.type);

@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { getBlocks, getMyPage } from '@/lib/server/data';
 import { getMyAccount, STATUS_MESSAGE } from '@/lib/db/account';
 import { PageEditor } from '@/components/editor/PageEditor';
 import { resolveTheme } from '@/lib/theme';
@@ -8,24 +8,14 @@ import type { Block } from '@/types';
 export const dynamic = 'force-dynamic';
 
 export default async function EditPage({ params }: { params: { pageId: string } }) {
-  const supabase = createClient();
   const { user, effectiveStatus } = await getMyAccount();
   if (!user) notFound();
   const readOnly = effectiveStatus !== 'active';
 
-  const { data: page } = await supabase
-    .from('pages')
-    .select('id, slug, title, theme')
-    .eq('id', params.pageId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const page = await getMyPage(params.pageId, user.id);
   if (!page) notFound();
 
-  const { data: blocks } = await supabase
-    .from('blocks')
-    .select('*')
-    .eq('page_id', page.id)
-    .order('position', { ascending: true });
+  const blocks = await getBlocks(page.id);
 
   return (
     <main className="mx-auto max-w-[560px] px-4 pt-1">

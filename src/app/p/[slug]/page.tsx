@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { getBlocks, getPublicPage } from '@/lib/server/data';
 import { notFound } from 'next/navigation';
 import { PageView } from '@/components/page/PageView';
 import { ViewTracker } from '@/components/blocks/ViewTracker';
@@ -9,26 +9,13 @@ import { isScheduledVisible, resolveTheme } from '@/lib/theme';
 export const dynamic = 'force-dynamic';
 
 async function loadPage(slug: string) {
-  const supabase = createClient();
-  const { data: page } = await supabase
-    .from('pages')
-    .select('*')
-    .eq('slug', decodeURIComponent(slug).toLowerCase())
-    .eq('is_published', true)
-    .maybeSingle();
-  if (!page) return { supabase, page: null, blocks: [] as Block[] };
-
-  const { data: blocks } = await supabase
-    .from('blocks')
-    .select('*')
-    .eq('page_id', page.id)
-    .eq('is_active', true)
-    .order('position', { ascending: true });
-
+  const page = await getPublicPage(slug);
+  if (!page) return { page: null, blocks: [] as Block[] };
+  const blocks = await getBlocks(page.id, true);
   // 예약 공개: 기간 밖의 블록은 서버에서 빼고 보냄 (페이지 소스에도 안 나오게)
   const now = Date.now();
-  const visible = ((blocks || []) as Block[]).filter((b) => isScheduledVisible(b.data, now));
-  return { supabase, page, blocks: visible };
+  const visible = blocks.filter((b) => isScheduledVisible(b.data, now));
+  return { page, blocks: visible };
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -70,7 +57,7 @@ export default async function PublicPage({ params }: { params: { slug: string } 
   return (
     <main>
       <ViewTracker pageId={page.id} />
-      <PageView page={page} blocks={blocks} isPublic />
+      <PageView page={page as any} blocks={blocks} isPublic />
     </main>
   );
 }

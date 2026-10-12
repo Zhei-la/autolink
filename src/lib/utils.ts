@@ -45,3 +45,8 @@ export const RESERVED_SLUGS = new Set([
 export function formatPrice(price: number): string {
   return price.toLocaleString('ko-KR') + '원';
 }
+
+/** DB 아이디(UUID) 형식인지 */
+export function isUuid(v: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v || '');
+}

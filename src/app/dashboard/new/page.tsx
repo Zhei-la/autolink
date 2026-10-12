@@ -1,22 +1,21 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { one } from '@/lib/server/db';
 import { getMyAccount, STATUS_MESSAGE } from '@/lib/db/account';
 import { NewPageForm } from './NewPageForm';
+
+export const dynamic = 'force-dynamic';
 
 export default async function NewPagePage() {
   const { user, profile, effectiveStatus } = await getMyAccount();
   if (!user) redirect('/login?next=/dashboard/new');
 
-  const supabase = createClient();
-  const { count } = await supabase
-    .from('pages')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', user.id);
+  const row = await one<{ n: number }>(`SELECT count(*)::int AS n FROM bl_pages WHERE user_id = $1`, [user.id]);
+  const count = row?.n ?? 0;
 
   const limit = profile?.page_limit ?? 3;
-  const remaining = Math.max(0, limit - (count ?? 0));
+  const remaining = user.isAdmin ? 99 : Math.max(0, limit - count);
 
   return (
     <main className="min-h-screen bg-white">

@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server';
+import { one, q } from '@/lib/server/db';
+import { isUuid } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 import { appendRefParams, buildVisitMeta, isBot } from '@/lib/tracking';
 import { normalizeUrl } from '@/lib/url';
@@ -39,12 +40,9 @@ export async function GET(
   // 클릭 기록 (실패해도 리다이렉트는 진행)
   if (!isBot(ua)) {
     try {
-      const supabase = createClient();
-      const { data: block } = await supabase
-        .from('blocks')
-        .select('page_id')
-        .eq('id', params.blockId)
-        .maybeSingle();
+      const block = isUuid(params.blockId)
+        ? await one<{ page_id: string }>(`SELECT page_id FROM bl_blocks WHERE id = $1`, [params.blockId])
+        : null;
 
       if (block) {
         const meta = buildVisitMeta(request.headers, {
@@ -53,21 +51,12 @@ export async function GET(
           utm_medium: url.searchParams.get('um'),
           utm_campaign: url.searchParams.get('uc'),
         });
-
-        const { error } = await supabase.rpc('record_block_click', {
-          p_block_id: params.blockId,
-          p_page_id: block.page_id,
-          p_visitor_hash: meta.visitorHash,
-          p_referrer: meta.referrer,
-          p_referrer_source: meta.referrerSource,
-          p_utm_source: meta.utmSource,
-          p_utm_medium: meta.utmMedium,
-          p_utm_campaign: meta.utmCampaign,
-          p_device_type: meta.deviceType,
-          p_is_inapp: meta.isInapp,
-          p_user_agent: meta.userAgent,
-        });
-        if (error) console.error('클릭 추적 실패:', error.message);
+        await q(
+          `INSERT INTO bl_click_events (block_id, page_id, visitor_hash, referrer, referrer_source, utm_source, utm_medium, utm_campaign, device_type, is_inapp_browser, user_agent)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+          [params.blockId, block.page_id, meta.visitorHash, meta.referrer, meta.referrerSource, meta.utmSource, meta.utmMedium, meta.utmCampaign, meta.deviceType, meta.isInapp, meta.userAgent]
+        );
+        await q(`UPDATE bl_blocks SET click_count = click_count + 1 WHERE id = $1`, [params.blockId]);
       }
     } catch (e) {
       console.error('클릭 추적 실패:', e);

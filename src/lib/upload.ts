@@ -1,8 +1,3 @@
-import { createClient } from "@/lib/supabase/client";
-
-// Supabase Storage 버킷 이름 (오토링크 시절 만든 버킷을 그대로 사용 — 이름만 내부용)
-const BUCKET = "autolink-images";
-
 export type UploadPreset = "cover" | "thumb" | "logo" | "gallery" | "background";
 
 /** 프리셋별 리사이즈 기준 (긴 변 px) + 정사각 크롭 여부 */
@@ -80,41 +75,19 @@ function loadImage(file: File): Promise<HTMLImageElement> {
   });
 }
 
-function extFor(blob: Blob, fallbackName: string): string {
-  if (blob.type === "image/webp") return "webp";
-  if (blob.type === "image/png") return "png";
-  if (blob.type === "image/jpeg") return "jpg";
-  if (blob.type === "image/gif") return "gif";
-  if (blob.type === "image/svg+xml") return "svg";
-  return fallbackName.split(".").pop() || "jpg";
-}
-
 export async function uploadImage(file: File, preset: UploadPreset = "gallery") {
-  // SVG 는 안에 스크립트를 넣을 수 있어 공개 저장소에 올리지 않음
+  // SVG 는 안에 스크립트를 넣을 수 있어 올리지 않음
   if (/svg/i.test(file.type) || /\.svg$/i.test(file.name)) {
-    throw new Error('SVG 는 올릴 수 없어요. PNG·JPG 로 올려주세요');
+    throw new Error("SVG 는 올릴 수 없어요. PNG·JPG 로 올려주세요");
   }
   if (file.size > 15 * 1024 * 1024) {
     throw new Error("15MB 이하 이미지만 올릴 수 있어요");
   }
-  const supabase = createClient();
   const blob = await prepareImage(file, preset);
-
-  const fileName = `${preset}-${Date.now()}-${Math.random().toString(36).slice(2)}.${extFor(blob, file.name)}`;
-
-  const { error } = await supabase.storage.from(BUCKET).upload(fileName, blob, {
-    cacheControl: "31536000",
-    upsert: false,
-    contentType: blob.type || file.type,
-  });
-
-  if (error) {
-    throw error;
-  }
-
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from(BUCKET).getPublicUrl(fileName);
-
-  return publicUrl;
+  const fd = new FormData();
+  fd.append("file", blob, file.name || "image");
+  const res = await fetch("/api/upload", { method: "POST", body: fd });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || !json.url) throw new Error(json.error || "이미지를 올리지 못했어요");
+  return json.url as string;
 }

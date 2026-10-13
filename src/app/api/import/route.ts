@@ -16,7 +16,7 @@ const ALLOWED_TYPES = new Set([
   'profile', 'link', 'product_grid', 'inquiry', 'calendar', 'email', 'text', 'sns',
   'link_collection', 'video', 'image_banner', 'spacer',
 ]);
-const COPY_HOSTS = [/^cdn\.litt\.ly$/, /(^|\.)pstatic\.net$/, /(^|\.)kakaocdn\.net$/];
+const COPY_HOSTS = [/^cdn\.litt\.ly$/, /^cdn\.sixshop\.io$/, /^cdn\.imweb\.me$/, /(^|\.)pstatic\.net$/, /(^|\.)kakaocdn\.net$/];
 const IMAGE_KEYS = new Set(['avatarUrl', 'thumbnail', 'bgImage', 'footerLogoUrl']);
 const MAX_IMAGE = 8 * 1024 * 1024;
 

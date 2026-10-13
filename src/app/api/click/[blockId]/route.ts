@@ -57,9 +57,9 @@ export async function GET(
           utm_campaign: url.searchParams.get('uc'),
         });
         await q(
-          `INSERT INTO bl_click_events (block_id, page_id, visitor_hash, referrer, referrer_source, utm_source, utm_medium, utm_campaign, device_type, is_inapp_browser, user_agent)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-          [params.blockId, block.page_id, meta.visitorHash, meta.referrer, meta.referrerSource, meta.utmSource, meta.utmMedium, meta.utmCampaign, meta.deviceType, meta.isInapp, meta.userAgent]
+          `INSERT INTO bl_click_events (block_id, page_id, visitor_hash, referrer, referrer_source, utm_source, utm_medium, utm_campaign, device_type, is_inapp_browser, user_agent, target_url)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+          [params.blockId, block.page_id, meta.visitorHash, meta.referrer, meta.referrerSource, meta.utmSource, meta.utmMedium, meta.utmCampaign, meta.deviceType, meta.isInapp, meta.userAgent, safeUrl.slice(0, 1000)]
         );
         await q(`UPDATE bl_blocks SET click_count = click_count + 1 WHERE id = $1`, [params.blockId]);
       }

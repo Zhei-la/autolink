@@ -4,6 +4,7 @@ import { q } from '@/lib/server/db';
 import { getMyAccount } from '@/lib/db/account';
 import { StatsView, type StatsData } from '@/components/stats/StatsView';
 import { blockMeta, blockSummary } from '@/components/editor/blockTypes';
+import { normalizeUrl } from '@/lib/url';
 import {
   INAPP_LABEL,
   SOURCE_LABEL,
@@ -15,6 +16,17 @@ import {
 } from '@/lib/analytics';
 
 export const dynamic = 'force-dynamic';
+
+/** 주소 비교용으로 정리 (https 유무·끝 / · 대소문자 무시) */
+function sameUrl(u?: string | null): string {
+  if (!u) return '';
+  try {
+    const x = new URL(normalizeUrl(u));
+    return (x.host.replace(/^www\./, '') + x.pathname.replace(/\/$/, '')).toLowerCase();
+  } catch {
+    return String(u).toLowerCase();
+  }
+}
 
 const CLICKABLE = new Set(['link', 'link_collection', 'image_banner', 'product_grid', 'sns']);
 
@@ -43,7 +55,7 @@ export default async function StatsPage({
       [page.id, startIso, endIso]
     ).then((r) => r.map(plain)),
     q(
-      `SELECT block_id, created_at, referrer, referrer_source, user_agent FROM bl_click_events
+      `SELECT block_id, created_at, referrer, referrer_source, user_agent, target_url FROM bl_click_events
         WHERE page_id = $1 AND created_at BETWEEN $2 AND $3 ORDER BY created_at, id LIMIT 100000`,
       [page.id, startIso, endIso]
     ).then((r) => r.map(plain)),
@@ -64,17 +76,33 @@ export default async function StatsPage({
   // 블록별 클릭
   const clickCount = new Map<string, number>();
   clicks.forEach((c) => clickCount.set(c.block_id, (clickCount.get(c.block_id) || 0) + 1));
-  const blockRows = blocks
+  const blockRows: { id: string; type: string; label: string; clicks: number }[] = [];
+  blocks
     .filter((b) => CLICKABLE.has(b.type) || clickCount.has(b.id))
-    .map((b) => {
+    .forEach((b) => {
       const meta = blockMeta(b.type);
+      const items: any[] = b.type === 'link_collection' ? (b.data?.links || []) : [];
+      if (items.length) {
+        // 버튼 묶음은 안에 있는 버튼마다 따로 셈 (누른 주소로 구분)
+        const mine = clicks.filter((c) => c.block_id === b.id);
+        const used = new Set<any>();
+        items.forEach((it, i) => {
+          const target = sameUrl(it.url);
+          const hit = mine.filter((c) => !used.has(c) && target && sameUrl(c.target_url) === target);
+          hit.forEach((c) => used.add(c));
+          blockRows.push({ id: `${b.id}:${i}`, type: b.type, label: `${meta.label} · ${it.title || it.url || i + 1}`, clicks: hit.length });
+        });
+        const rest = mine.length - used.size;
+        if (rest > 0) blockRows.push({ id: `${b.id}:etc`, type: b.type, label: `${meta.label} · 기타`, clicks: rest });
+        return;
+      }
       const summary = blockSummary(b as any);
-      return {
+      blockRows.push({
         id: b.id,
         type: b.type,
         label: summary ? `${meta.label} · ${summary}` : meta.label,
         clicks: clickCount.get(b.id) || 0,
-      };
+      });
     });
 
   // 유입 채널: 리퍼러 도메인 기준

@@ -98,6 +98,8 @@ CREATE TABLE IF NOT EXISTS bl_click_events (
   user_agent       TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_bl_clicks_page ON bl_click_events(page_id, created_at DESC);
+-- 버튼 묶음 안에서 어떤 버튼을 눌렀는지 (목적지 주소)
+ALTER TABLE bl_click_events ADD COLUMN IF NOT EXISTS target_url TEXT;
 
 CREATE TABLE IF NOT EXISTS bl_inquiries (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -17,6 +17,17 @@ const ALLOWED_TYPES = new Set([
   'link_collection', 'video', 'image_banner', 'spacer',
 ]);
 const COPY_HOSTS = [/^cdn\.litt\.ly$/, /^cdn\.sixshop\.io$/, /^cdn\.imweb\.me$/, /(^|\.)pstatic\.net$/, /(^|\.)kakaocdn\.net$/];
+/**
+ * 사진 복사 대상: 알려진 이미지 서버 + 일반 https 도메인 (업체 홈페이지 사진 등)
+ * 내부 주소(IP 직접 입력, localhost, *.internal, *.local)는 막음
+ */
+function isCopyableHost(host: string): boolean {
+  if (COPY_HOSTS.some((re) => re.test(host))) return true;
+  const h = host.toLowerCase();
+  if (!h.includes('.') || /^[\d.]+$/.test(h) || h.includes(':') || h.startsWith('[')) return false;
+  if (/(^|\.)(localhost|internal|local|localdomain|railway\.internal)$/.test(h)) return false;
+  return true;
+}
 const IMAGE_KEYS = new Set(['avatarUrl', 'thumbnail', 'bgImage', 'footerLogoUrl']);
 const MAX_IMAGE = 8 * 1024 * 1024;
 
@@ -45,7 +56,7 @@ export async function POST(request: Request) {
     let out = url;
     try {
       const u = new URL(url);
-      if (u.protocol === 'https:' && COPY_HOSTS.some((re) => re.test(u.hostname))) {
+      if (u.protocol === 'https:' && isCopyableHost(u.hostname)) {
         const res = await fetch(u.toString(), { signal: AbortSignal.timeout(15000) });
         const mime = (res.headers.get('content-type') || '').split(';')[0].trim();
         if (res.ok && /^image\/(png|jpe?g|webp|gif)$/.test(mime)) {

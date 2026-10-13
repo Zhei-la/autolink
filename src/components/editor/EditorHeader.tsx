@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Check, ChevronDown, Copy, ExternalLink, LayoutGrid, LogOut, Plus, Settings, ShieldCheck, X } from 'lucide-react';
+import { Check, ChevronDown, Copy, ExternalLink, LayoutGrid, LogOut, Plus, Settings, ShieldCheck, UserPlus, X } from 'lucide-react';
+import { ShareSheet } from '@/components/share/ShareSheet';
 import { useModalHistory } from '@/hooks/useModalHistory';
 import { publicPath, publicUrl } from '@/lib/theme';
 import { withBase } from '@/lib/utils';
@@ -13,6 +14,7 @@ interface NavPage {
   id: string;
   title: string;
   slug: string;
+  is_owner?: boolean;
   avatar?: string | null;
 }
 
@@ -36,6 +38,7 @@ export function EditorHeader({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [origin, setOrigin] = useState('');
   useEffect(() => setOrigin(window.location.origin), []);
   useModalHistory(open, () => setOpen(false));
@@ -129,6 +132,14 @@ export function EditorHeader({
             </button>
             <button
               type="button"
+              onClick={() => setSharing(true)}
+              className="h-9 pl-2.5 pr-3 rounded-full bg-ink text-white text-[13px] font-bold flex items-center gap-1 flex-shrink-0 bl-ring"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>공유하기</span>
+            </button>
+            <button
+              type="button"
               onClick={copy}
               aria-label="주소 복사"
               className={`md:hidden w-9 h-9 rounded-full flex items-center justify-center bl-ring ${copied ? 'bg-cherry text-white' : 'text-ink hover:bg-mist'}`}
@@ -163,6 +174,10 @@ export function EditorHeader({
           </nav>
         </div>
       </header>
+
+      {sharing && current && (
+        <ShareSheet pageId={current.id} pageTitle={current.title} isOwner={current.is_owner !== false} onClose={() => setSharing(false)} />
+      )}
 
       {copied && (
         <div className="md:hidden fixed top-[64px] left-1/2 -translate-x-1/2 z-50 h-9 px-4 rounded-full bg-ink text-white text-[13px] font-semibold flex items-center shadow-lg">

@@ -20,7 +20,7 @@ export default async function EditLayout({
   if (!user) redirect(`/login?next=/edit/${params.pageId}`);
 
   const all = await getMyPages(user.id);
-  const pages = all.map((p) => ({ id: p.id, slug: p.slug, title: p.title }));
+  const pages = all.map((p) => ({ id: p.id, slug: p.slug, title: p.title, is_owner: !!p.is_owner }));
 
   const current = pages.find((p) => p.id === params.pageId);
   if (!current) notFound();

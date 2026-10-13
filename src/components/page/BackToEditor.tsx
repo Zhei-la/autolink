@@ -1,28 +1,40 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { withBase } from '@/lib/utils';
 
 /**
- * 편집 화면에서 '내 페이지 보기'로 들어왔을 때만 보이는 "돌아가기" 버튼.
- * 뒤로가기와 같은 동작이라, 휴대폰에서 뒤로가기를 눌러도 편집 화면으로 돌아간다.
+ * 편집 화면에서 '내 페이지 보기'(?from=edit)로 들어왔을 때만 보이는 "돌아가기" 버튼.
+ * - 같은 창에서 열리므로 휴대폰 뒤로가기도 편집 화면으로 돌아감
+ * - 이 창(탭)에서는 새로고침·앞으로가기를 해도 버튼이 남아 있음 (sessionStorage)
+ * - 주소창의 ?from=edit 는 지워서, 주소를 복사해 공유해도 방문자에겐 안 보임
  */
 export function BackToEditor({ pageId }: { pageId: string }) {
-  // 주소창의 ?from=edit 는 지워서, 주소를 복사해도 깔끔하게
+  const [show, setShow] = useState(false);
+  const key = `bl_from_edit_${pageId}`;
+
   useEffect(() => {
+    let on = false;
     try {
       const u = new URL(window.location.href);
-      if (u.searchParams.has('from')) {
+      if (u.searchParams.get('from') === 'edit') {
+        on = true;
+        try { sessionStorage.setItem(key, '1'); } catch {}
         u.searchParams.delete('from');
         window.history.replaceState(window.history.state, '', u.pathname + u.search + u.hash);
+      } else {
+        try { on = sessionStorage.getItem(key) === '1'; } catch {}
       }
     } catch {}
-  }, []);
+    setShow(on);
+  }, [key]);
+
+  if (!show) return null;
 
   function back() {
-    const fromEditor = /\/(edit|dashboard)(\/|$|\?)/.test(document.referrer) && window.history.length > 1;
-    if (fromEditor) window.history.back();
+    const fromApp = /\/(edit|dashboard)(\/|$|\?)/.test(document.referrer) && window.history.length > 1;
+    if (fromApp) window.history.back();
     else window.location.href = withBase(`/edit/${pageId}`);
   }
 

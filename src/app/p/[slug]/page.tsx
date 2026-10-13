@@ -64,7 +64,7 @@ export default async function PublicPage({
   return (
     <main>
       <ViewTracker pageId={page.id} />
-      {searchParams?.from === 'edit' && <BackToEditor pageId={page.id} />}
+      <BackToEditor pageId={page.id} />
       <PageView page={page as any} blocks={blocks} isPublic />
     </main>
   );

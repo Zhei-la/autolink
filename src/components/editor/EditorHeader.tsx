@@ -147,10 +147,8 @@ export function EditorHeader({
               {copied ? <Check className="w-[18px] h-[18px]" /> : <Copy className="w-[18px] h-[18px]" />}
             </button>
             <a
-              href={publicPath(slug)}
-              target="_blank"
-              rel="noopener"
-              aria-label="내 페이지 새 창으로 열기"
+              href={`${publicPath(slug)}?from=edit`}
+              aria-label="내 페이지 보기"
               className="w-9 h-9 rounded-full flex items-center justify-center text-ink hover:bg-mist bl-ring"
             >
               <ExternalLink className="w-[18px] h-[18px]" />

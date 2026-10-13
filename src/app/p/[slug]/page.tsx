@@ -2,6 +2,7 @@ import { getBlocks, getPublicPage } from '@/lib/server/data';
 import { notFound } from 'next/navigation';
 import { PageView } from '@/components/page/PageView';
 import { ViewTracker } from '@/components/blocks/ViewTracker';
+import { BackToEditor } from '@/components/page/BackToEditor';
 import type { Block } from '@/types';
 import type { Metadata, Viewport } from 'next';
 import { isScheduledVisible, resolveTheme } from '@/lib/theme';
@@ -48,7 +49,13 @@ export async function generateViewport({ params }: { params: { slug: string } })
   };
 }
 
-export default async function PublicPage({ params }: { params: { slug: string } }) {
+export default async function PublicPage({
+  params,
+  searchParams,
+}: {
+  params: { slug: string };
+  searchParams?: { [k: string]: string | string[] | undefined };
+}) {
   const { page, blocks } = await loadPage(params.slug);
   if (!page) notFound();
 
@@ -57,6 +64,7 @@ export default async function PublicPage({ params }: { params: { slug: string } 
   return (
     <main>
       <ViewTracker pageId={page.id} />
+      {searchParams?.from === 'edit' && <BackToEditor pageId={page.id} />}
       <PageView page={page as any} blocks={blocks} isPublic />
     </main>
   );

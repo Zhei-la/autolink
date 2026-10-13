@@ -129,9 +129,7 @@ export default async function DashboardPage({
                       )}
                     </div>
                     <a
-                      href={publicPath(page.slug)}
-                      target="_blank"
-                      rel="noopener"
+                      href={`${publicPath(page.slug)}?from=edit`}
                       className="inline-flex items-center gap-1 text-sm text-[#3f3f44] hover:text-cherry underline underline-offset-2 decoration-line"
                     >
                       {publicUrlLabel(page.slug)}{' '}

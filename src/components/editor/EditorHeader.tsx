@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Check, ChevronDown, Copy, ExternalLink, LayoutGrid, LogOut, Plus, Settings, ShieldCheck, X } from 'lucide-react';
 import { useModalHistory } from '@/hooks/useModalHistory';
@@ -33,6 +33,7 @@ export function EditorHeader({
   canCreate: boolean;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [origin, setOrigin] = useState('');
@@ -51,6 +52,29 @@ export function EditorHeader({
     { href: `${base}/stats`, label: '통계', active: pathname.startsWith(`${base}/stats`) },
     { href: `${base}/manage`, label: '받은 문의', active: pathname.startsWith(`${base}/manage`) },
   ];
+
+  /**
+   * 메뉴 안에서 다른 화면으로 이동: 메뉴를 닫을 때 생기는 '뒤로가기'가 끝난 다음에 이동해야
+   * 이동이 취소되지 않음 (전에는 다른 페이지를 눌러도 같은 페이지에 머물렀음)
+   */
+  function go(href: string) {
+    return (e: React.MouseEvent) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // 새 탭 열기는 그대로
+      e.preventDefault();
+      const hasModalEntry = typeof window !== 'undefined' && !!window.history.state?.alModal;
+      if (hasModalEntry) {
+        const onPop = () => {
+          window.removeEventListener('popstate', onPop);
+          setTimeout(() => router.push(href), 0);
+        };
+        window.addEventListener('popstate', onPop);
+        setOpen(false);
+      } else {
+        setOpen(false);
+        router.push(href);
+      }
+    };
+  }
 
   async function copy() {
     try {
@@ -169,7 +193,7 @@ export function EditorHeader({
                   <Link
                     key={p.id}
                     href={`/edit/${p.id}`}
-                    onClick={() => setOpen(false)}
+                    onClick={go(`/edit/${p.id}`)}
                     className={`flex items-center gap-3 px-2.5 py-2.5 rounded-[14px] ${on ? 'bg-mist' : 'hover:bg-mist'}`}
                   >
                     <Avatar page={p} size={40} />
@@ -184,6 +208,7 @@ export function EditorHeader({
               {canCreate && (
                 <Link
                   href="/dashboard/new"
+                  onClick={go('/dashboard/new')}
                   className="flex items-center gap-3 px-2.5 py-2.5 rounded-[14px] hover:bg-mist text-[#3f3f44]"
                 >
                   <span className="w-10 h-10 rounded-full border-2 border-dashed border-line flex items-center justify-center">
@@ -195,9 +220,9 @@ export function EditorHeader({
             </div>
 
             <div className="mt-2 mx-5 border-t border-line pt-1">
-              <MenuRow href="/dashboard" Icon={LayoutGrid} label="내 페이지 목록" onClick={() => setOpen(false)} />
-              <MenuRow href={`/edit/${pageId}/settings`} Icon={Settings} label="주소 · 공개 · 삭제" onClick={() => setOpen(false)} />
-              {isAdmin && <MenuRow href="/admin" Icon={ShieldCheck} label="운영자 관리" onClick={() => setOpen(false)} />}
+              <MenuRow href="/dashboard" Icon={LayoutGrid} label="내 페이지 목록" onClick={go('/dashboard')} />
+              <MenuRow href={`/edit/${pageId}/settings`} Icon={Settings} label="주소 · 공개 · 삭제" onClick={go(`/edit/${pageId}/settings`)} />
+              {isAdmin && <MenuRow href="/admin" Icon={ShieldCheck} label="운영자 관리" onClick={go('/admin')} />}
               <form action={withBase('/auth/signout')} method="post">
                 <button className="w-full flex items-center gap-3 h-12 text-[15px] text-[#8b8b90]">
                   <LogOut className="w-[18px] h-[18px]" /> 로그아웃
@@ -231,7 +256,7 @@ function MenuRow({
   href: string;
   Icon: React.ComponentType<{ className?: string }>;
   label: string;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent) => void;
 }) {
   return (
     <Link href={href} onClick={onClick} className="flex items-center gap-3 h-12 text-[15px] text-ink">

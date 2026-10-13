@@ -47,8 +47,8 @@ export function resolveRange(
     endDay = okT ? (to as string) : today;
     if (startDay > endDay) [startDay, endDay] = [endDay, startDay];
   } else {
-    const n = { '7d': 7, '30d': 30, '90d': 90, '180d': 180 }[k as '7d' | '30d' | '90d' | '180d'];
-    startDay = kstDay(now - (n - 1) * DAY);
+    const n = { '7d': 8, '30d': 30, '90d': 90, '180d': 180 }[k as '7d' | '30d' | '90d' | '180d'];
+    startDay = kstDay(now - (n - 1) * DAY); // 일주일 = 지난 7일 + 오늘 (리틀리와 같게)
   }
 
   // 최대 400일 — 합계와 그래프 기간이 같도록 시작일을 당김

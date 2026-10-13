@@ -7,6 +7,7 @@ import { getMyAccount, STATUS_MESSAGE } from '@/lib/db/account';
 import { Logo } from '@/components/brand/Logo';
 import { publicUrlLabel, publicPath } from '@/lib/theme';
 import { withBase } from '@/lib/utils';
+import { RedeemForm } from '@/components/share/RedeemForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,7 @@ export default async function DashboardPage({
 
   const pages = (await getMyPages(user.id)).sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1));
 
-  const pageCount = pages?.length || 0;
+  const pageCount = pages.filter((p) => p.is_owner).length; // 내가 주인인 페이지만 개수에 셈
   const pageLimit = profile?.page_limit ?? 3;
   const canCreate = effectiveStatus === 'active' && (user.isAdmin || pageCount < pageLimit);
 
@@ -95,6 +96,8 @@ export default async function DashboardPage({
           )}
         </div>
 
+        <RedeemForm />
+
         {!pages || pages.length === 0 ? (
           <div className="text-center py-20 border-2 border-dashed border-line rounded-[20px]">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-cherry-soft flex items-center justify-center">
@@ -118,6 +121,9 @@ export default async function DashboardPage({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-extrabold text-[17px] text-ink truncate">{page.title}</h3>
+                      {!page.is_owner && (
+                        <span className="text-[11px] font-bold bg-cherry-soft text-cherry px-1.5 py-0.5 rounded-md">공유받음</span>
+                      )}
                       {!page.is_published && (
                         <span className="text-[11px] font-bold bg-mist text-[#8b8b90] px-1.5 py-0.5 rounded-md">비공개</span>
                       )}

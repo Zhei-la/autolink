@@ -42,14 +42,17 @@ export async function GET(
   if (!isBot(ua)) {
     try {
       const block = isUuid(params.blockId)
-        ? await one<{ page_id: string; user_id: number }>(
-            `SELECT b.page_id, p.user_id FROM bl_blocks b JOIN bl_pages p ON p.id = b.page_id WHERE b.id = $1`,
+        ? await one<{ page_id: string; user_id: number; members: number[] }>(
+            `SELECT b.page_id, p.user_id,
+                    ARRAY(SELECT m.user_id FROM bl_page_members m WHERE m.page_id = p.id) AS members
+               FROM bl_blocks b JOIN bl_pages p ON p.id = b.page_id WHERE b.id = $1`,
             [params.blockId]
           )
         : null;
 
       // 페이지 주인이 직접 누른 건 세지 않음
-      if (block && block.user_id !== viewerUid(request)) {
+      const me = viewerUid(request);
+      if (block && block.user_id !== me && !(me && (block.members || []).includes(me))) {
         const meta = buildVisitMeta(request.headers, {
           referrer: url.searchParams.get('r'),
           utm_source: url.searchParams.get('us'),

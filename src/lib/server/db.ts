@@ -121,6 +121,27 @@ CREATE TABLE IF NOT EXISTS bl_emails (
 );
 CREATE INDEX IF NOT EXISTS idx_bl_emails_page ON bl_emails(page_id, created_at DESC);
 
+-- 함께 편집하는 사람 (업체 사장님 등). 페이지 주인은 bl_pages.user_id
+CREATE TABLE IF NOT EXISTS bl_page_members (
+  page_id    UUID NOT NULL REFERENCES bl_pages(id) ON DELETE CASCADE,
+  user_id    INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  added_by   INT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (page_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_bl_members_user ON bl_page_members(user_id);
+
+-- 한 번만 쓸 수 있는 초대 코드
+CREATE TABLE IF NOT EXISTS bl_invites (
+  code       TEXT PRIMARY KEY,
+  page_id    UUID NOT NULL REFERENCES bl_pages(id) ON DELETE CASCADE,
+  created_by INT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_by    INT REFERENCES users(id) ON DELETE SET NULL,
+  used_at    TIMESTAMPTZ
+);
+
 CREATE TABLE IF NOT EXISTS bl_images (
   id         BIGSERIAL PRIMARY KEY,
   user_id    INT REFERENCES users(id) ON DELETE SET NULL,

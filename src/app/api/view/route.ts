@@ -21,7 +21,8 @@ export async function POST(request: Request) {
   try {
     const rows = await q(
       `INSERT INTO bl_page_views (page_id, visitor_hash, referrer, referrer_source, utm_source, utm_medium, utm_campaign, device_type, is_inapp_browser, inapp_app, user_agent)
-       SELECT id, $2,$3,$4,$5,$6,$7,$8,$9,$10,$11 FROM bl_pages WHERE id = $1 AND is_published AND user_id <> $12
+       SELECT p.id, $2,$3,$4,$5,$6,$7,$8,$9,$10,$11 FROM bl_pages p WHERE p.id = $1 AND p.is_published AND p.user_id <> $12
+         AND NOT EXISTS (SELECT 1 FROM bl_page_members m WHERE m.page_id = p.id AND m.user_id = $12)
        RETURNING page_id`,
       [body.pageId, meta.visitorHash, meta.referrer, meta.referrerSource, meta.utmSource, meta.utmMedium, meta.utmCampaign, meta.deviceType, meta.isInapp, meta.inappApp, meta.userAgent, me]
     );

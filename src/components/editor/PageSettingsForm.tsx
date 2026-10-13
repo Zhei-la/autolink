@@ -9,10 +9,12 @@ import { ConfirmDialog, FieldLabel, TextField, Toggle } from './ui';
 
 interface Props {
   page: any;
+  /** 저장 버튼과 삭제 버튼 사이에 넣을 칸 (업체와 함께 편집 등) */
+  children?: React.ReactNode;
 }
 
 /** 페이지 설정: 이름 · 주소(아이디) · 공개 여부 · 삭제. 색·폰트는 디자인 탭에서 */
-export function PageSettingsForm({ page }: Props) {
+export function PageSettingsForm({ page, children }: Props) {
   const router = useRouter();
   const [title, setTitle] = useState(page.title || '');
   const [slug, setSlug] = useState(page.slug || '');
@@ -63,7 +65,7 @@ export function PageSettingsForm({ page }: Props) {
         <TextField label="페이지 이름 (나만 보는 이름)" value={title} onChange={setTitle} maxLength={50} required />
         <div>
           <FieldLabel>페이지 주소</FieldLabel>
-          <div className="flex items-center h-12 px-3.5 rounded-xl border border-[#e4e4e7] bg-white focus-within:border-[#111]">
+          <div className="flex items-center h-12 px-3.5 rounded-[12px] bg-mist border border-transparent focus-within:bg-white focus-within:border-ink">
             <span className="text-[#a1a1a6] text-[14px] whitespace-nowrap">{base}</span>
             <input
               value={slug}
@@ -92,10 +94,13 @@ export function PageSettingsForm({ page }: Props) {
       {error && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
       {info && <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700">{info}</div>}
 
-      <button type="submit" disabled={saving} className="w-full h-13 py-3.5 rounded-2xl bg-[#111] text-white font-semibold disabled:opacity-50">
+      <button type="submit" disabled={saving} className="w-full h-13 py-3.5 rounded-2xl bg-ink text-white font-semibold disabled:opacity-50">
         {saving ? '저장 중…' : '저장'}
       </button>
 
+      {children && <div className="pt-3">{children}</div>}
+
+      {page.is_owner !== false && (
       <section className="pt-6">
         <button
           type="button"
@@ -106,6 +111,7 @@ export function PageSettingsForm({ page }: Props) {
           {deleting ? '삭제 중…' : '이 페이지 삭제'}
         </button>
       </section>
+      )}
 
       <ConfirmDialog
         open={askDelete}

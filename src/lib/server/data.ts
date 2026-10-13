@@ -10,9 +10,15 @@ export function plain<T extends Record<string, any>>(row: T): T {
   return out;
 }
 
+/** 이 회원이 고칠 수 있는 페이지인지 (주인 또는 함께 편집하는 사람). p = bl_pages 별칭, $n = 회원 번호 */
+export const canEditSql = (n: number) =>
+  `(p.user_id = $${n} OR EXISTS (SELECT 1 FROM bl_page_members m WHERE m.page_id = p.id AND m.user_id = $${n}))`;
+
 export interface PageRow {
   id: string;
   user_id: number;
+  /** 내가 주인인지 (아니면 초대받아 함께 편집) */
+  is_owner?: boolean;
   slug: string;
   title: string;
   theme: any;
@@ -25,12 +31,15 @@ export interface PageRow {
 /** 내 페이지 하나 (남의 페이지면 null) */
 export async function getMyPage(pageId: string, userId: number): Promise<PageRow | null> {
   if (!isUuid(pageId)) return null;
-  const row = await one(`SELECT * FROM bl_pages WHERE id = $1 AND user_id = $2`, [pageId, userId]);
+  const row = await one(`SELECT p.*, (p.user_id = $2) AS is_owner FROM bl_pages p WHERE p.id = $1 AND ${canEditSql(2)}`, [
+    pageId,
+    userId,
+  ]);
   return row ? (plain(row) as PageRow) : null;
 }
 
 export async function getMyPages(userId: number): Promise<PageRow[]> {
-  const rows = await q(`SELECT * FROM bl_pages WHERE user_id = $1 ORDER BY created_at`, [userId]);
+  const rows = await q(`SELECT p.*, (p.user_id = $1) AS is_owner FROM bl_pages p WHERE ${canEditSql(1)} ORDER BY p.created_at`, [userId]);
   return rows.map((r) => plain(r) as PageRow);
 }
 

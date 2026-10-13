@@ -6,6 +6,7 @@ import { isValidSlug, RESERVED_SLUGS } from '@/lib/utils';
 import { DEFAULT_THEME } from '@/types';
 import { assertCanEdit } from './account';
 import { one, q, tx } from '@/lib/server/db';
+import { canEditSql } from '@/lib/server/data';
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -31,7 +32,7 @@ export async function createPage(formData: FormData): Promise<ActionResult> {
   const title = ((formData.get('title') as string) || '').trim().slice(0, 50) || '내 링크 페이지';
 
   const limit = profile?.page_limit ?? 3;
-  const cnt = await one<{ n: number }>(`SELECT count(*)::int AS n FROM bl_pages WHERE user_id = $1`, [user.id]);
+  const cnt = await one<{ n: number }>(`SELECT count(*)::int AS n FROM bl_pages WHERE user_id = $1`, [user.id]); // 내가 주인인 페이지만 셈
   if (!user.isAdmin && (cnt?.n ?? 0) >= limit) {
     return { ok: false, error: `페이지는 최대 ${limit}개까지 만들 수 있어요. 더 필요하면 운영자에게 요청해주세요.` };
   }
@@ -102,7 +103,7 @@ export async function updatePage(
   vals.push(pageId, user.id);
   try {
     await q(
-      `UPDATE bl_pages SET ${sets.join(', ')}, updated_at = now() WHERE id = $${vals.length - 1} AND user_id = $${vals.length}`,
+      `UPDATE bl_pages p SET ${sets.join(', ')}, updated_at = now() WHERE p.id = $${vals.length - 1} AND ${canEditSql(vals.length)}`,
       vals
     );
   } catch (e: any) {

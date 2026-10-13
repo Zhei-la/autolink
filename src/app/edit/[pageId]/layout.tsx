@@ -19,7 +19,8 @@ export default async function EditLayout({
   const { user, profile, effectiveStatus } = await getMyAccount();
   if (!user) redirect(`/login?next=/edit/${params.pageId}`);
 
-  const pages = (await getMyPages(user.id)).map((p) => ({ id: p.id, slug: p.slug, title: p.title }));
+  const all = await getMyPages(user.id);
+  const pages = all.map((p) => ({ id: p.id, slug: p.slug, title: p.title }));
 
   const current = pages.find((p) => p.id === params.pageId);
   if (!current) notFound();
@@ -35,7 +36,7 @@ export default async function EditLayout({
   });
 
   const limit = profile?.page_limit ?? 3;
-  const canCreate = effectiveStatus === 'active' && (user.isAdmin || pages.length < limit);
+  const canCreate = effectiveStatus === 'active' && (user.isAdmin || all.filter((p) => p.is_owner).length < limit);
 
   return (
     <div className="min-h-screen bg-white pb-28">

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import type { BlockType } from '@/types';
 import { assertCanEdit } from './account';
 import { one, q, tx } from '@/lib/server/db';
+import { canEditSql } from '@/lib/server/data';
 import { isUuid } from '@/lib/utils';
 
 const ALLOWED_TYPES: BlockType[] = [
@@ -15,7 +16,7 @@ const ALLOWED_TYPES: BlockType[] = [
 async function assertPageOwner(pageId: string) {
   const { user } = await assertCanEdit();
   if (!isUuid(pageId)) throw new Error('이 페이지에 접근 권한이 없어요');
-  const page = await one(`SELECT id FROM bl_pages WHERE id = $1 AND user_id = $2`, [pageId, user.id]);
+  const page = await one(`SELECT p.id FROM bl_pages p WHERE p.id = $1 AND ${canEditSql(2)}`, [pageId, user.id]);
   if (!page) throw new Error('이 페이지에 접근 권한이 없어요');
   return { user };
 }

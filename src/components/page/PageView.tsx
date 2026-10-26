@@ -283,7 +283,7 @@ function LinkView({ block, theme, isPublic }: { block: Block; theme: Theme; isPu
             className="absolute inset-x-0 bottom-0 p-4 pt-12"
             style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.6))' }}
           >
-            <div className="font-bold text-white text-[17px] leading-snug">{title}</div>
+            <div className="font-bold text-white text-[17px] leading-snug whitespace-pre-line">{title}</div>
           </div>
         </div>
       </Clickable>
@@ -304,7 +304,7 @@ function LinkView({ block, theme, isPublic }: { block: Block; theme: Theme; isPu
             <img src={d.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover" />
           </div>
         )}
-        <div className="px-4 py-4 text-center font-medium text-[15px] leading-snug">{title}</div>
+        <div className="px-4 py-4 text-center font-medium text-[15px] leading-snug whitespace-pre-line">{title}</div>
       </Clickable>
     );
   }
@@ -333,7 +333,7 @@ function LinkView({ block, theme, isPublic }: { block: Block; theme: Theme; isPu
         />
       )}
       <div className={`flex-1 min-w-0 text-center font-medium text-[15px] leading-snug py-3 ${d.thumbnail ? 'pr-[54px]' : ''}`}>
-        <span className="line-clamp-2">{title}</span>
+        <span className="line-clamp-2 whitespace-pre-line">{title}</span>
       </div>
     </Clickable>
   );

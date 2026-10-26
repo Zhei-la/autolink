@@ -217,15 +217,16 @@ function LinkFields({ data, onChange }: FieldsProps) {
   return (
     <div className="space-y-5">
       <div>
-        <FieldLabel hint="사진은 선택">버튼 글자</FieldLabel>
+        <FieldLabel hint="사진은 선택 · 엔터로 줄바꿈">버튼 글자</FieldLabel>
         <div className="flex items-center gap-2.5">
           <ThumbButton value={data.thumbnail} onChange={(url) => onChange((d: any) => ({ ...d, thumbnail: url }))} />
-          <input
+          <textarea
             value={data.title || ''}
             onChange={(e) => onChange({ ...data, title: e.target.value })}
-            maxLength={50}
+            maxLength={80}
+            rows={(data.title || '').includes('\n') ? 2 : 1}
             placeholder="예: 상담 신청하기"
-            className="flex-1 min-w-0 h-12 px-3.5 rounded-[12px] text-[15px] bg-mist border border-transparent outline-none focus:bg-white focus:border-ink focus:shadow-[0_0_0_3px_#ffedf1] transition"
+            className="flex-1 min-w-0 min-h-[48px] py-3 px-3.5 rounded-[12px] text-[15px] leading-snug resize-none bg-mist border border-transparent outline-none focus:bg-white focus:border-ink focus:shadow-[0_0_0_3px_#ffedf1] transition"
           />
         </div>
       </div>
